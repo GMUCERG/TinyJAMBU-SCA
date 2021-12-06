@@ -24,15 +24,15 @@ entity LWC is
         clk             : in  std_logic;
         rst             : in  std_logic;
         --! Publica data ports
-        pdi_data        : in  std_logic_vector(W-1 downto 0);
+        pdi_data        : in  std_logic_vector(N*W-1 downto 0);
         pdi_valid       : in  std_logic;
         pdi_ready       : out std_logic;
         --! Secret data ports
-        sdi_data        : in  std_logic_vector(SW-1 downto 0);
+        sdi_data        : in  std_logic_vector(N*SW-1 downto 0);
         sdi_valid       : in  std_logic;
         sdi_ready       : out std_logic;
         --! Data out ports
-        do_data         : out std_logic_vector(W-1 downto 0);
+        do_data         : out std_logic_vector(N*W-1 downto 0);
         do_ready        : in  std_logic;
         do_valid        : out std_logic;
         do_last         : out std_logic;
@@ -111,22 +111,22 @@ architecture structure of LWC is
 --    signal pdi_data_b               : std_logic_vector(W-1 downto 0);
 --    signal pdi_data_c               : std_logic_vector(W-1 downto 0);
     signal pdi_data_arr             : pdi_array;
-    signal pdi_sipo_ready           : std_logic;
-    signal pdi_sipo_valid           : std_logic;
+--    signal pdi_sipo_ready           : std_logic;
+--    signal pdi_sipo_valid           : std_logic;
     ------!SDI_FIFO to Pre-Processor
 --    signal sdi_data_a               : std_logic_vector(SW-1 downto 0);
 --    signal sdi_data_b               : std_logic_vector(SW-1 downto 0);
 --    signal sdi_data_c               : std_logic_vector(SW-1 downto 0);
     signal sdi_data_arr                 : sdi_array;
-    signal sdi_sipo_ready           : std_logic;
-    signal sdi_sipo_valid           : std_logic;
+--    signal sdi_sipo_ready           : std_logic;
+--    signal sdi_sipo_valid           : std_logic;
     ------!Post-Processor to DO_FIFO
 --    signal do_data_a                : std_logic_vector(SW-1 downto 0);
 --    signal do_data_b                : std_logic_vector(SW-1 downto 0);
 --    signal do_data_c                : std_logic_vector(SW-1 downto 0);
     signal do_data_arr              : do_array;
-    signal do_piso_ready            : std_logic;
-    signal do_piso_valid            : std_logic;
+--    signal do_piso_ready            : std_logic;
+--    signal do_piso_valid            : std_logic;
     --==========================================================================
     
     
@@ -134,34 +134,41 @@ begin
 
     assert (ASYNC_RSTN = false) report "Asynchronous reset is not supported!" severity failure;
 
-    Inst_pdi_sipo: entity work.pdi_sipo
-        PORT MAP(
-                clk             => clk                                     ,
-                rst             => rst                                     ,
-                pdi_data        => pdi_data                                ,
-                pdi_valid       => pdi_valid                               ,
-                pdi_ready       => pdi_ready                               ,
---                pdi_data_a      => pdi_data_a                              ,
---                pdi_data_b      => pdi_data_b                              ,
---                pdi_data_c      => pdi_data_c                              ,
-                pdi_data_arr        => pdi_data_arr,
-                pdi_sipo_valid  => pdi_sipo_valid                          ,
-                pdi_sipo_ready  => pdi_sipo_ready
-            );
-    Inst_sdi_sipo: entity work.sdi_sipo
-        PORT MAP(
-                clk             => clk                                     ,
-                rst             => rst                                     ,
-                sdi_data        => sdi_data                                ,
-                sdi_valid       => sdi_valid                               ,
-                sdi_ready       => sdi_ready                               ,
---                sdi_data_a      => sdi_data_a                              ,
---                sdi_data_b      => sdi_data_b                              ,
---                sdi_data_c      => sdi_data_c                              ,
-                sdi_data_arr    => sdi_data_arr,
-                sdi_sipo_valid  => sdi_sipo_valid                          ,
-                sdi_sipo_ready  => sdi_sipo_ready
-            );
+--    Inst_pdi_sipo: entity work.pdi_sipo
+--        PORT MAP(
+--                clk             => clk                                     ,
+--                rst             => rst                                     ,
+--                pdi_data        => pdi_data                                ,
+--                pdi_valid       => pdi_valid                               ,
+--                pdi_ready       => pdi_ready                               ,
+----                pdi_data_a      => pdi_data_a                              ,
+----                pdi_data_b      => pdi_data_b                              ,
+----                pdi_data_c      => pdi_data_c                              ,
+--                pdi_data_arr        => pdi_data_arr,
+--                pdi_sipo_valid  => pdi_sipo_valid                          ,
+--                pdi_sipo_ready  => pdi_sipo_ready
+--            );
+--    Inst_sdi_sipo: entity work.sdi_sipo
+--        PORT MAP(
+--                clk             => clk                                     ,
+--                rst             => rst                                     ,
+--                sdi_data        => sdi_data                                ,
+--                sdi_valid       => sdi_valid                               ,
+--                sdi_ready       => sdi_ready                               ,
+----                sdi_data_a      => sdi_data_a                              ,
+----                sdi_data_b      => sdi_data_b                              ,
+----                sdi_data_c      => sdi_data_c                              ,
+--                sdi_data_arr    => sdi_data_arr,
+--                sdi_sipo_valid  => sdi_sipo_valid                          ,
+--                sdi_sipo_ready  => sdi_sipo_ready
+--            );
+
+    gen_io : for i in 0 to N-1 generate
+        pdi_data_arr(N-1-i) <= pdi_data((i+1)*W-1 downto i*W);
+        sdi_data_arr(N-1-i) <= sdi_data((i+1)*SW-1 downto i*SW);
+        do_data((i+1)*W-1 downto i*W) <= do_data_arr(N-1-i);
+    end generate;
+    
     Inst_PreProcessor: entity work.PreProcessor(PreProcessor)
         PORT MAP(
                 clk             => clk                                     ,
@@ -170,14 +177,14 @@ begin
 --                pdi_data_b      => pdi_data_b                              ,
 --                pdi_data_c      => pdi_data_c                              ,
                 pdi_data_arr    => pdi_data_arr,
-                pdi_valid       => pdi_sipo_valid                          ,
-                pdi_ready       => pdi_sipo_ready                          ,
+                pdi_valid       => pdi_valid                          ,
+                pdi_ready       => pdi_ready                          ,
 --                sdi_data_a      => sdi_data_a                              ,
 --                sdi_data_b      => sdi_data_b                              ,
 --                sdi_data_c      => sdi_data_c                              ,
                 sdi_data_arr    => sdi_data_arr,
-                sdi_valid       => sdi_sipo_valid                          ,
-                sdi_ready       => sdi_sipo_ready                          ,
+                sdi_valid       => sdi_valid                          ,
+                sdi_ready       => sdi_ready                          ,
 --                key_a           => key_cipher_in_a                         ,      
 --                key_b           => key_cipher_in_b                         ,
 --                key_c           => key_cipher_in_c                         ,
@@ -264,27 +271,27 @@ begin
 --                do_data_b       => do_data_b                               , 
 --                do_data_c       => do_data_c                               ,
                 do_data_arr     => do_data_arr,
-                do_valid        => do_piso_valid                           ,
+                do_valid        => do_valid                           ,
                 do_last         => do_last                                 ,
-                do_ready        => do_piso_ready                           ,
+                do_ready        => do_ready                           ,
                 msg_auth_valid  => msg_auth_valid                          ,
                 msg_auth_ready  => msg_auth_ready                          ,
                 msg_auth        => msg_auth
             );
-    Inst_do_piso: entity work.do_piso
-        PORT MAP(
-                clk             => clk                                     ,
-                rst             => rst                                     ,
-                do_data         => do_data                                 ,
-                do_valid        => do_valid                                ,
-                do_ready        => do_ready                                ,
---                do_data_a       => do_data_a                               ,
---                do_data_b       => do_data_b                               ,
---                do_data_c       => do_data_c                               ,
-                do_data_arr     => do_data_arr,
-                do_piso_valid   => do_piso_valid                           ,
-                do_piso_ready   => do_piso_ready
-            );
+--    Inst_do_piso: entity work.do_piso
+--        PORT MAP(
+--                clk             => clk                                     ,
+--                rst             => rst                                     ,
+--                do_data         => do_data                                 ,
+--                do_valid        => do_valid                                ,
+--                do_ready        => do_ready                                ,
+----                do_data_a       => do_data_a                               ,
+----                do_data_b       => do_data_b                               ,
+----                do_data_c       => do_data_c                               ,
+--                do_data_arr     => do_data_arr,
+--                do_piso_valid   => do_piso_valid                           ,
+--                do_piso_ready   => do_piso_ready
+--            );
     Inst_Header_Fifo: entity work.fwft_fifo(structure)
         generic map (
                 G_W             => W,

@@ -31,6 +31,8 @@ package NIST_LWAPI_pkg is
     constant W       : integer :=32;
     constant SW      : integer :=W;
     constant RW      : integer :=W;
+    constant N       : integer :=2; --number of shares
+    
 
     --! Default values for do_data bus
     --! to avoid leaking intermeadiate values if do_valid = '0'.

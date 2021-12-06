@@ -34,9 +34,9 @@ entity LWC_TB IS
         G_TEST_OSTALL       : integer := 3;
         G_RANDOMIZE_STALLS  : boolean := True;
         G_PERIOD_PS         : integer := 10_000;
-        G_FNAME_PDI         : string  := "KAT/KAT_32/split_sharedPDI.txt";
-        G_FNAME_SDI         : string  := "/KAT/KAT_32/split_sharedSDI.txt";
-        G_FNAME_DO          : string  := "/KAT/KAT_32/do.txt";
+        G_FNAME_PDI         : string  := "/home/bakry/repos/TinyJAMBU-SCA/KAT/KAT_32/sharedPDI.txt";
+        G_FNAME_SDI         : string  := "/home/bakry/repos/TinyJAMBU-SCA/KAT/KAT_32/sharedSDI.txt";
+        G_FNAME_DO          : string  := "/home/bakry/repos/TinyJAMBU-SCA/KAT/KAT_32/do.txt";
         G_FNAME_LOG         : string  := "log.txt";
         G_FNAME_TIMING      : string  := "timing.txt";
         G_FNAME_TIMING_CSV  : string  := "timing.csv";
@@ -66,21 +66,21 @@ architecture TB of LWC_TB is
     signal rst                  : std_logic := '0';
 
     --! pdi
-    signal pdi_data             : std_logic_vector(W-1 downto 0) := (others => '0');
-    signal pdi_data_delayed     : std_logic_vector(W-1 downto 0) := (others => '0');
+    signal pdi_data             : std_logic_vector(N*W-1 downto 0) := (others => '0');
+    signal pdi_data_delayed     : std_logic_vector(N*W-1 downto 0) := (others => '0');
     signal pdi_valid            : std_logic := '0';
     signal pdi_valid_delayed    : std_logic := '0';
     signal pdi_ready            : std_logic;
 
     --! sdi
-    signal sdi_data             : std_logic_vector(SW-1 downto 0) := (others => '0');
-    signal sdi_data_delayed     : std_logic_vector(SW-1 downto 0) := (others => '0');
+    signal sdi_data             : std_logic_vector(N*SW-1 downto 0) := (others => '0');
+    signal sdi_data_delayed     : std_logic_vector(N*SW-1 downto 0) := (others => '0');
     signal sdi_valid            : std_logic := '0';
     signal sdi_valid_delayed    : std_logic := '0';
     signal sdi_ready            : std_logic;
 
     --! do
-    signal do_data              : std_logic_vector(W-1 downto 0);
+    signal do_data              : std_logic_vector(W-1 downto 0); -- sum of shares to be comapred aginst unshared
     signal do_valid             : std_logic;
     signal do_last              : std_logic;
     signal do_ready             : std_logic := '0';
@@ -103,8 +103,8 @@ architecture TB of LWC_TB is
     constant cons_dat           : string(1 to 6) := "DAT = ";
     constant cons_stt           : string(1 to 6) := "STT = ";
     constant cons_eof           : string(1 to 6) := "###EOF";
-    constant SUCCESS_WORD       : std_logic_vector(W - 1 downto 0) := INST_SUCCESS & (W - 5 downto 0 => '0');
-    constant FAILURE_WORD       : std_logic_vector(W - 1 downto 0) := INST_FAILURE & (W - 5 downto 0 => '0');
+    constant SUCCESS_WORD       : std_logic_vector(N*W - 1 downto 0) := INST_SUCCESS & (N*W - 5 downto 0 => '0');
+    constant FAILURE_WORD       : std_logic_vector(N*W - 1 downto 0) := INST_FAILURE & (N*W - 5 downto 0 => '0');
 
 
     ------------------- input / output files ----------------------
@@ -135,13 +135,13 @@ architecture TB of LWC_TB is
         port(
             clk       : in  std_logic;
             rst       : in  std_logic;
-            pdi_data  : in  std_logic_vector(W - 1 downto 0);
+            pdi_data  : in  std_logic_vector(N*W - 1 downto 0);
             pdi_valid : in  std_logic;
             pdi_ready : out std_logic;
-            sdi_data  : in  std_logic_vector(SW - 1 downto 0);
+            sdi_data  : in  std_logic_vector(N*SW - 1 downto 0);
             sdi_valid : in  std_logic;
             sdi_ready : out std_logic;
-            do_data   : out std_logic_vector(W - 1 downto 0);
+            do_data   : out std_logic_vector(N*W - 1 downto 0);
             do_ready  : in  std_logic;
             do_valid  : out std_logic;
             do_last   : out std_logic;
@@ -159,32 +159,32 @@ architecture TB of LWC_TB is
     signal do_sipo_ready, do_sipo_valid, do_valid_lwc  : std_logic;
 --    signal do_data_a, do_data_b, do_data_c : std_logic_vector(W-1 downto 0);
     signal do_data_arr, do_sum : pdi_array;
-    signal do_data_lwc : std_logic_vector(W-1 downto 0);
+    signal do_data_lwc : std_logic_vector(N*W-1 downto 0);
     
 begin
     --ADDED
    
     --SIPO to collect do shares and release them as combined share
-    Inst_do_sipo: entity work.pdi_sipo
-        PORT MAP(
-                clk             => clk                                     ,
-                rst             => rst                                     ,
-                pdi_data        => do_data_lwc                                ,
-                pdi_valid       => do_valid_lwc                               ,
-                pdi_ready       => do_sipo_ready                               ,
---                pdi_data_a      => do_data_a                              ,
---                pdi_data_b      => do_data_b                              ,
---                pdi_data_c      => do_data_c                              ,
-                pdi_data_arr         => do_data_arr,
-                pdi_sipo_valid  => do_valid                          ,
-                pdi_sipo_ready  => do_ready_delayed
-            ); 
+--    Inst_do_sipo: entity work.pdi_sipo
+--        PORT MAP(
+--                clk             => clk                                     ,
+--                rst             => rst                                     ,
+--                pdi_data        => do_data_lwc                                ,
+--                pdi_valid       => do_valid_lwc                               ,
+--                pdi_ready       => do_sipo_ready                               ,
+----                pdi_data_a      => do_data_a                              ,
+----                pdi_data_b      => do_data_b                              ,
+----                pdi_data_c      => do_data_c                              ,
+--                pdi_data_arr         => do_data_arr,
+--                pdi_sipo_valid  => do_valid                          ,
+--                pdi_sipo_ready  => do_ready_delayed
+--            ); 
     --do_data <= do_data_a xor do_data_b xor do_data_c;
-    do_sum(0) <=  do_data_arr(0);
-    gen: for i in 1 to API_SHARE_NUM-1 generate
-        do_sum(i) <= do_data_arr(i) xor do_sum(i-1);
+    do_sum(0) <=  do_data_lwc(W-1 downto 0);
+    gen: for i in 1 to N-1 generate
+        do_sum(i) <= do_data_lwc((i+1)*W-1 downto i*W) xor do_sum(i-1);
     end generate;
-    do_data <= do_sum(API_SHARE_NUM-1);
+    do_data <= do_sum(N-1);
     
     ---END ADDED
 
@@ -212,9 +212,9 @@ begin
         sdi_data     => sdi_data_delayed,
         sdi_valid    => sdi_valid_delayed,
         sdi_ready    => sdi_ready,
-        do_data      => do_data_lwc, --do_data,
-        do_ready     => do_sipo_ready, --do_ready_delayed,
-        do_valid     => do_valid_lwc, -- do_valid,
+        do_data      => do_data_lwc,
+        do_ready     => do_ready_delayed,
+        do_valid     => do_valid,
         do_last      => do_last,
         --ADDED
         rdi_data        => (others => '1'),
@@ -256,7 +256,7 @@ begin
     --! ==================== DATA POPULATION FOR PUBLIC DATA ==================
     tb_read_pdi : process
         variable line_data      : line;
-        variable word_block     : std_logic_vector(W-1 downto 0) := (others=>'0');
+        variable word_block     : std_logic_vector(N*W-1 downto 0) := (others=>'0');
         variable read_result    : boolean;
         variable line_head      : string(1 to 6);
         variable stall_cycles   : integer;
@@ -300,7 +300,7 @@ begin
     --! ==================== DATA POPULATION FOR SECRET DATA ==================
     tb_read_sdi : process
         variable line_data      : line;
-        variable word_block     : std_logic_vector(SW-1 downto 0) := (others=>'0');
+        variable word_block     : std_logic_vector(N*SW-1 downto 0) := (others=>'0');
         variable read_result    : boolean;
         variable line_head      : string(1 to 6);
         variable stall_cycles    : integer;

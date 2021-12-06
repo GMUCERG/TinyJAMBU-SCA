@@ -108,16 +108,11 @@ signal rnd : std_logic_vector(SHARE_WIDTH*SHARE_NUM*(SHARE_NUM-1)/2+(SHARE_WIDTH
 
 begin
 
---every two adjacent shares are split with zero share
---to avoid first-order leakage
-map_input: for i in 0 to SHARE_NUM-1 generate
-    bdi(i) <= bdi_arr(2*i);
-    key(i) <= key_arr(2*i);
-    bdo_arr(2*i) <= bdo(i);
-end generate;
 
-map_bdo:for i in 0 to SHARE_NUM-2 generate
-    bdo_arr(2*i+1) <= (others=>'0');
+map_input: for i in 0 to SHARE_NUM-1 generate
+    bdi(i) <= bdi_arr(i);
+    key(i) <= key_arr(i);
+    bdo_arr(i) <= bdo(i);
 end generate;
 
 datapath : entity work.tinyjambu_datapath

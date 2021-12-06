@@ -24,7 +24,7 @@ package Design_pkg is
      
     --!
     constant SHARE_NUM : natural := 2; --valid values 1, 2 ...
-    constant API_SHARE_NUM : natural := 3; -- shares split with zeros -> S0 0 S1 0 S2 ..
+    constant API_SHARE_NUM : natural := 2; -- shares split with zeros -> S0 0 S1 0 S2 ..
                                            -- valid values 3, 5, 7 ..
     constant CONCURRENT : natural := 32; --! Valid settings:  2, 4, 8, 16, 32
     constant IO_WIDTH : natural := 32; --valid values 32!

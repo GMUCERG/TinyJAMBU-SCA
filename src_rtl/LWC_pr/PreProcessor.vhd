@@ -39,31 +39,18 @@ entity PreProcessor is
             clk             : in  std_logic;
             rst             : in  std_logic;
             --! Public Data input (pdi) ========================================
-            --            pdi_data_a      : in  STD_LOGIC_VECTOR(W       -1 downto 0);
-            --            pdi_data_b      : in  STD_LOGIC_VECTOR(W       -1 downto 0);
-            --            pdi_data_c      : in  STD_LOGIC_VECTOR(W       -1 downto 0);
-            
             pdi_data_arr    : in pdi_array;       
             pdi_valid       : in  std_logic;
             pdi_ready       : out std_logic;
             --! Secret Data input (sdi) ========================================
-            --sdi_data_a      : in  STD_LOGIC_VECTOR(SW      -1 downto 0);
-            --sdi_data_b      : in  STD_LOGIC_VECTOR(SW      -1 downto 0);
-            --sdi_data_c      : in  STD_LOGIC_VECTOR(SW      -1 downto 0);
             sdi_data_arr    : in sdi_array;
             sdi_valid       : in  std_logic;
             sdi_ready       : out std_logic;
 
             --! Crypto Core ====================================================
-            --key_a           : out STD_LOGIC_VECTOR(CCSW    -1 downto 0);
-			--key_b           : out STD_LOGIC_VECTOR(CCSW    -1 downto 0);
-			--key_c           : out STD_LOGIC_VECTOR(CCSW    -1 downto 0);
 			key_arr         : out sdi_array;
             key_valid       : out std_logic;
             key_ready       : in  std_logic;
-            --bdi_a           : out STD_LOGIC_VECTOR(CCW     -1 downto 0);
-            --bdi_b           : out STD_LOGIC_VECTOR(CCW     -1 downto 0);
-            --bdi_c           : out STD_LOGIC_VECTOR(CCW     -1 downto 0);
             bdi_arr         : out pdi_array;
             bdi_valid       : out std_logic;
             bdi_ready       : in  std_logic;
@@ -247,17 +234,9 @@ FSM_32BIT: if (W=32) generate
         (
             clk=> clk,
             rst=> rst,
-
---            data_s_a     => key_a,
---            data_s_b     => key_b,
---            data_s_c     => key_c,
             data_s   => key_arr,        
             data_valid_s => key_valid,
             data_ready_s => key_ready,
-
---            data_p_a     => sdi_data_a,
---            data_p_b     => sdi_data_b,
---            data_p_c     => sdi_data_c,
             data_p   => sdi_data_arr,
             data_valid_p => key_valid_p,
             data_ready_p => key_ready_p
@@ -273,16 +252,10 @@ FSM_32BIT: if (W=32) generate
             data_size_p  => bdi_size_p,
             data_size_s  => bdi_size,
 
---            data_s_a     => bdi_a,
---            data_s_b     => bdi_b,
---            data_s_c     => bdi_c,
             data_s       => bdi_arr,
             data_valid_s => bdi_valid,
             data_ready_s => bdi_ready,
 
---            data_p_a     => pdi_data_a,
---            data_p_b     => pdi_data_b,
---            data_p_c     => pdi_data_c,
             data_p       => pdi_data_arr, 
             data_valid_p => bdi_valid_p,
             data_ready_p => bdi_ready_p,

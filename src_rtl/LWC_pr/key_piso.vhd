@@ -35,16 +35,10 @@ entity KEY_PISO is
             clk               : in std_logic;
             rst               : in std_logic;
 
---            data_s_a           : out STD_LOGIC_VECTOR(CCSW-1 downto 0);
---            data_s_b           : out STD_LOGIC_VECTOR(CCSW-1 downto 0);
---            data_s_c           : out STD_LOGIC_VECTOR(CCSW-1 downto 0);
             data_s             : out sdi_array;
             data_valid_s       : out STD_LOGIC;
             data_ready_s       : in  STD_LOGIC;
 
---            data_p_a           : in  STD_LOGIC_VECTOR(31 downto 0);
---            data_p_b           : in  STD_LOGIC_VECTOR(31 downto 0);
---            data_p_c           : in  STD_LOGIC_VECTOR(31 downto 0);
             data_p             : in sdi_array;
             data_valid_p       : in  STD_LOGIC;
             data_ready_p       : out STD_LOGIC
@@ -62,9 +56,6 @@ begin
 
 CCSW32: if CCSW = 32 generate
 
---    data_s_a <= data_p_a;
---    data_s_b <= data_p_b;
---    data_s_c <= data_p_c;
     data_s <= data_p;
     data_valid_s <= data_valid_p;
     data_ready_p <= data_ready_s;

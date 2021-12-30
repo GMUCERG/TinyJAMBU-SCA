@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
---! @file       dom_mul.vhd (CAESAR API for Lightweight)
+--! @file       reg_n.vhd
 --! @brief      Register
 --! @author     Abuabkr Abdulgadir
 --! @copyright  Copyright (c) 2020 Cryptographic Engineering Research Group

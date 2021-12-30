@@ -33,17 +33,11 @@ entity CryptoCore is
         rst                 : in   std_logic;
         --PreProcessor===============================================
         ----!key----------------------------------------------------
---        key_a                 : in   std_logic_vector (CCSW     -1 downto 0);
---        key_b                 : in   std_logic_vector (CCSW     -1 downto 0);
---        key_c                 : in   std_logic_vector (CCSW     -1 downto 0);
         key_arr             : in sdi_array;
         key_valid           : in   std_logic;
         key_update          : in   std_logic;
         key_ready           : out  std_logic;
         ----!Data----------------------------------------------------
---        bdi_a                 : in   std_logic_vector (CCW     -1 downto 0);
---        bdi_b                 : in   std_logic_vector (CCW     -1 downto 0);
---        bdi_c                 : in   std_logic_vector (CCW     -1 downto 0);
         bdi_arr             : in pdi_array;
         bdi_valid           : in   std_logic;
         bdi_ready           : out  std_logic;
@@ -56,9 +50,6 @@ entity CryptoCore is
         decrypt_in          : in   std_logic;
         hash_in             : in   std_logic;
         --!Post Processor=========================================
---        bdo_a                 : out  std_logic_vector (CCW      -1 downto 0);
---        bdo_b                 : out  std_logic_vector (CCW      -1 downto 0);
---        bdo_c                 : out  std_logic_vector (CCW      -1 downto 0);
         bdo_arr             : out do_array;
         bdo_valid           : out  std_logic;
         bdo_ready           : in   std_logic;
@@ -97,17 +88,7 @@ signal bdo_sig          : std_logic_vector (31 downto 0);
 
 signal bdi, key, bdo : io_share_array;
 
---! PRNG signals
---signal reseed, prng_rdi_valid : std_logic;
---signal prng_rdi_data : std_logic_vector(NUM_TRIVIUM_UNITS * 64 - 1 downto 0);
---signal seed : std_logic_vector(SEED_SIZE - 1 downto 0); 
---signal en_seed_sipo : std_logic;
-----
---signal rnd : std_logic_vector(SHARE_WIDTH*SHARE_NUM*(SHARE_NUM-1)/2+(SHARE_WIDTH*SHARE_NUM)-1
---                              downto 0);
-
 begin
-
 
 map_input: for i in 0 to SHARE_NUM-1 generate
     bdi(i) <= bdi_arr(i);
@@ -173,40 +154,8 @@ control : entity work.tinyjambu_control
                 msg_auth_valid  => msg_auth_valid,
                 msg_auth_ready  => msg_auth_ready,
                 msg_auth        => msg_auth,
-                --! rdi data form outside world to be used as PRNG seed
                 rdi_valid => rdi_valid,
                 rdi_ready => rdi_ready
---                --! PRNG
---                prng_rdi_valid => prng_rdi_valid,
---                prng_reseed => reseed,
---                en_seed_sipo => en_seed_sipo
             );
-            
---            --Trivium PRNG
---    trivium_inst : entity work.prng_trivium_enhanced(structural)
---    generic map (N => NUM_TRIVIUM_UNITS)
---    port map(
---		clk         => clk,
---        rst         => rst,
---		en_prng     => '1',
---        seed        => seed,
---		reseed      => reseed,
---		reseed_ack  => open,
---		rdi_data    => prng_rdi_data,
---		rdi_ready   => '1',
---		rdi_valid   => prng_rdi_valid
---	);
-	
---	--! seed SIPO
---	seed_sipo : process(clk)
---	begin
---	   if rising_edge(clk) then
---	       if en_seed_sipo = '1' then
---	           seed <= seed(SEED_SIZE - RW - 1 downto 0) & rdi_data;
---	       end if;
---	   end if;
---	end process;
-	
---	rnd <= prng_rdi_data(SHARE_WIDTH*SHARE_NUM*(SHARE_NUM-1)/2+(SHARE_WIDTH*SHARE_NUM)-1 downto 0);
-	
+
 end architecture structural;

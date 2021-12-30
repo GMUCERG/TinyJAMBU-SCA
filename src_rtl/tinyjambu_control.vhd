@@ -68,10 +68,6 @@ entity tinyjambu_control is
          --! rdi data form outside world to be used as PRNG seed
         rdi_valid       : in std_logic;
         rdi_ready       : out std_logic
-        --! PRNG
---        prng_rdi_valid  : in std_logic;
---        prng_reseed     : out std_logic;
---        en_seed_sipo    : out std_logic
 
     );
 end entity tinyjambu_control;
@@ -88,9 +84,6 @@ constant NUM_KEY_WORDS  : natural := 4;
 
 -- CryptoCore States
 type state_type is ( RST,
--- PRNG setup
---LOAD_SEED, START_PRNG, WAIT_PRNG,
---
 IDLE,
 -- Load and process the key
 LOAD_KEY, KEY_INIT,
@@ -177,41 +170,13 @@ key_index               <= std_logic_vector (key_count(1 downto 0));
         next_state          <= state;
         next_wrd_cnt        <= wrd_cnt;
         --
---        prng_reseed <= '0';
         rdi_ready <= '0';
---        en_seed_sipo <= '0';
         
         case state is
-                --!============================================ PRNG setup
             when RST =>
                 next_state <= IDLE;
                 next_wrd_cnt <= (others=>'0');
-                
---            when LOAD_SEED =>
---                rdi_ready <= '1';
---                if rdi_valid = '1' then
---                    en_seed_sipo <= '1';
---                    if wrd_cnt = SEED_SIZE / RW -1 then
---                        next_state <= START_PRNG;
---                    else
---                        next_state <= LOAD_SEED;
---                    end if;
---                    next_wrd_cnt <= wrd_cnt + 1;
---                else
---                    next_state <= LOAD_SEED;
---                end if;
-            
---            when START_PRNG =>
---                prng_reseed <= '1';
---                next_state <= WAIT_PRNG;
-            
---            when WAIT_PRNG =>
---                if prng_rdi_valid = '1' then
---                    next_state <= IDLE;
---                else
---                    next_state <= WAIT_PRNG;
---                end if;
-            
+
         --! =========================================================== 
         when IDLE => 
             --bdi_ready       <= '1';
@@ -227,7 +192,6 @@ key_index               <= std_logic_vector (key_count(1 downto 0));
                
 --            auth_failed <= '0';
             next_wrd_cnt <= (others=>'0');
-                
                 
         when LOAD_KEY =>
             key_ready       <= '1';

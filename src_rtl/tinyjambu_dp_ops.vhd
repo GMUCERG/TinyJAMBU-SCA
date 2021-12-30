@@ -181,17 +181,6 @@ begin
     end if;
 end process key_load_proc;
 
----
---gen_const_add:
---if CONST_ADD = true generate
---    to_nlfsr <= s_mux_out;
---end generate;
-
---gen_no_const_add:
---if CONST_ADD = false generate
---    to_nlfsr <= in_xor_out & s(95 downto 0); --bypass partial bytes and FrameBits addition
---end generate;
-
 to_nlfsr <= s_mux_out;
 
 end architecture behav;

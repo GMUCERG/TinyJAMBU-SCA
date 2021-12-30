@@ -186,7 +186,7 @@ begin
     end generate;
     do_data <= do_sum(N-1);
     
-    di_valid_proc : process
+    rdi_valid_proc : process
     begin
         rdi_valid <= '0';
         wait for 100*clk_period;
@@ -197,6 +197,8 @@ begin
         rdi_valid <= '1';
         wait;
     end process;
+    
+    rdi_data <= (others => '1');
     
     ---END ADDED
 
@@ -229,7 +231,7 @@ begin
         do_valid     => do_valid,
         do_last      => do_last,
         --ADDED
-        rdi_data        => (others => '1'),
+        rdi_data        => rdi_data,
         rdi_ready       => rdi_ready,
         rdi_valid       => rdi_valid
     );

@@ -20,8 +20,6 @@ use work.design_pkg.all;
 entity dom_mul_reg is
     port(
         clk  : in std_logic;
---        rst  : in std_logic;
---        en   : in std_logic;
         d    : in term_array;
         q    : out term_array
     );
@@ -41,11 +39,7 @@ begin
     reg: process(clk)
     begin
         if rising_edge(clk) then
---            if (rst = '1') then
---                q <= (others => (others=>(others=>'0')));
---            elsif (en = '1') then
                 q <=d;
---            end if;
         end if;
     end process;
 

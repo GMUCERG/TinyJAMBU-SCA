@@ -7,7 +7,7 @@ version = "0.1.0"
 [rtl]
 sources = [
 "src_rtl/design_pkg.vhd",
-"src_rtl/LWC_pr/NIST_LWAPI_pkg.vhd",
+"src_rtl/LWC/NIST_LWAPI_pkg.vhd",
 "src_rtl/tinyjambu_dp_ops.vhd",
 "src_rtl/reg_n.vhd",
 "src_rtl/dom_mul_reg.vhd",
@@ -18,14 +18,14 @@ sources = [
 "src_rtl/tinyjambu_datapath.vhd",
 "src_rtl/tinyjambu_control.vhd",
 "src_rtl/CryptoCore.vhd",
-"src_rtl/LWC_pr/StepDownCountLd.vhd",
-"src_rtl/LWC_pr/key_piso.vhd",
-"src_rtl/LWC_pr/data_piso.vhd",
-"src_rtl/LWC_pr/PreProcessor.vhd",
-"src_rtl/LWC_pr/data_sipo.vhd",
-"src_rtl/LWC_pr/PostProcessor.vhd",
-"src_rtl/LWC_pr/fwft_fifo.vhd",
-"src_rtl/LWC_pr/LWC.vhd",
+"src_rtl/LWC/StepDownCountLd.vhd",
+"src_rtl/LWC/key_piso.vhd",
+"src_rtl/LWC/data_piso.vhd",
+"src_rtl/LWC/PreProcessor.vhd",
+"src_rtl/LWC/data_sipo.vhd",
+"src_rtl/LWC/PostProcessor.vhd",
+"src_rtl/LWC/fwft_fifo.vhd",
+"src_rtl/LWC/LWC.vhd",
 ]
 # includes = []
 top = "LWC"

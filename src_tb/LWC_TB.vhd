@@ -34,9 +34,9 @@ entity LWC_TB IS
         G_TEST_OSTALL       : integer := 3;
         G_RANDOMIZE_STALLS  : boolean := True;
         G_PERIOD_PS         : integer := 10_000;
-        G_FNAME_PDI         : string  := "/home/bakry/repos/TinyJAMBU-SCA/KAT/pdi_shared.txt";
-        G_FNAME_SDI         : string  := "/home/bakry/repos/TinyJAMBU-SCA/KAT/sdi_shared.txt";
-        G_FNAME_DO          : string  := "/home/bakry/repos/TinyJAMBU-SCA/KAT/do.txt";
+        G_FNAME_PDI         : string  := "../../KAT/TinyJAMBU-DOM1-v1/pdi_shared.txt";
+        G_FNAME_SDI         : string  := "../../KAT/TinyJAMBU-DOM1-v1/sdi_shared.txt";
+        G_FNAME_DO          : string  := "../../KAT/TinyJAMBU-DOM1-v1/do.txt";
         G_FNAME_LOG         : string  := "log.txt";
         G_FNAME_TIMING      : string  := "timing.txt";
         G_FNAME_TIMING_CSV  : string  := "timing.csv";

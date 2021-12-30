@@ -67,11 +67,11 @@ entity tinyjambu_control is
         msg_auth        : out std_logic;
          --! rdi data form outside world to be used as PRNG seed
         rdi_valid       : in std_logic;
-        rdi_ready       : out std_logic;
+        rdi_ready       : out std_logic
         --! PRNG
-        prng_rdi_valid  : in std_logic;
-        prng_reseed     : out std_logic;
-        en_seed_sipo    : out std_logic
+--        prng_rdi_valid  : in std_logic;
+--        prng_reseed     : out std_logic;
+--        en_seed_sipo    : out std_logic
 
     );
 end entity tinyjambu_control;
@@ -89,7 +89,7 @@ constant NUM_KEY_WORDS  : natural := 4;
 -- CryptoCore States
 type state_type is ( RST,
 -- PRNG setup
-LOAD_SEED, START_PRNG, WAIT_PRNG,
+--LOAD_SEED, START_PRNG, WAIT_PRNG,
 --
 IDLE,
 -- Load and process the key
@@ -177,40 +177,40 @@ key_index               <= std_logic_vector (key_count(1 downto 0));
         next_state          <= state;
         next_wrd_cnt        <= wrd_cnt;
         --
-        prng_reseed <= '0';
+--        prng_reseed <= '0';
         rdi_ready <= '0';
-        en_seed_sipo <= '0';
+--        en_seed_sipo <= '0';
         
         case state is
                 --!============================================ PRNG setup
             when RST =>
-                next_state <= LOAD_SEED;
+                next_state <= IDLE;
                 next_wrd_cnt <= (others=>'0');
                 
-            when LOAD_SEED =>
-                rdi_ready <= '1';
-                if rdi_valid = '1' then
-                    en_seed_sipo <= '1';
-                    if wrd_cnt = SEED_SIZE / RW -1 then
-                        next_state <= START_PRNG;
-                    else
-                        next_state <= LOAD_SEED;
-                    end if;
-                    next_wrd_cnt <= wrd_cnt + 1;
-                else
-                    next_state <= LOAD_SEED;
-                end if;
+--            when LOAD_SEED =>
+--                rdi_ready <= '1';
+--                if rdi_valid = '1' then
+--                    en_seed_sipo <= '1';
+--                    if wrd_cnt = SEED_SIZE / RW -1 then
+--                        next_state <= START_PRNG;
+--                    else
+--                        next_state <= LOAD_SEED;
+--                    end if;
+--                    next_wrd_cnt <= wrd_cnt + 1;
+--                else
+--                    next_state <= LOAD_SEED;
+--                end if;
             
-            when START_PRNG =>
-                prng_reseed <= '1';
-                next_state <= WAIT_PRNG;
+--            when START_PRNG =>
+--                prng_reseed <= '1';
+--                next_state <= WAIT_PRNG;
             
-            when WAIT_PRNG =>
-                if prng_rdi_valid = '1' then
-                    next_state <= IDLE;
-                else
-                    next_state <= WAIT_PRNG;
-                end if;
+--            when WAIT_PRNG =>
+--                if prng_rdi_valid = '1' then
+--                    next_state <= IDLE;
+--                else
+--                    next_state <= WAIT_PRNG;
+--                end if;
             
         --! =========================================================== 
         when IDLE => 
@@ -240,10 +240,13 @@ key_index               <= std_logic_vector (key_count(1 downto 0));
                 end if;
             end if;
         when KEY_INIT =>
-            nlfsr_en        <= '1';
-            next_cycles     <= cycles + 1;
-            if (cycles + 1 >= P_KEYSETUP) then
-                next_state   <= NPUB_INIT_A;
+            rdi_ready <= '1';
+            if rdi_valid = '1' then
+                nlfsr_en        <= '1';
+                next_cycles     <= cycles + 1;
+                if (cycles + 1 >= P_KEYSETUP) then
+                    next_state   <= NPUB_INIT_A;
+                end if;
             end if;
         when NPUB_INIT_A =>
             fbits_sel       <= b"00";
@@ -252,11 +255,14 @@ key_index               <= std_logic_vector (key_count(1 downto 0));
             next_state      <= NPUB_INIT_B;
             next_npub       <= npub;
         when NPUB_INIT_B =>
-            nlfsr_en        <= '1';
-            next_cycles     <= cycles + 1;
-            next_npub       <= npub;
-            if (cycles + 1 >= P_NPUBSETUP) then
-                next_state   <= NPUB_INIT_C;
+            rdi_ready <= '1';
+            if rdi_valid = '1' then
+                nlfsr_en        <= '1';
+                next_cycles     <= cycles + 1;
+                next_npub       <= npub;
+                if (cycles + 1 >= P_NPUBSETUP) then
+                    next_state   <= NPUB_INIT_C;
+                end if;
             end if;
         when NPUB_INIT_C =>
             s_sel           <= b"01";
@@ -288,10 +294,13 @@ key_index               <= std_logic_vector (key_count(1 downto 0));
             nlfsr_load      <= '1'; 
             next_state      <= AD_B;
         when AD_B => 
-            nlfsr_en        <= '1';
-            next_cycles     <= cycles + 1;
-            if (cycles + 1 >= P_AD) then
-                next_state  <= AD_C;
+            rdi_ready <= '1';
+            if rdi_valid = '1' then
+                nlfsr_en        <= '1';
+                next_cycles     <= cycles + 1;
+                if (cycles + 1 >= P_AD) then
+                    next_state  <= AD_C;
+                end if;
             end if;
         when AD_C => 
             bdi_ready   <= '1';
@@ -320,10 +329,13 @@ key_index               <= std_logic_vector (key_count(1 downto 0));
             nlfsr_load      <= '1'; 
             next_state      <= ENCRYPT_B;
         when ENCRYPT_B =>
-            nlfsr_en        <= '1';
-            next_cycles     <= cycles + 1;
-            if (cycles + 1 >= P_ENCRYPT) then
-                next_state  <= ENCRYPT_C;
+            rdi_ready <= '1';
+            if rdi_valid = '1' then
+                nlfsr_en        <= '1';
+                next_cycles     <= cycles + 1;
+                if (cycles + 1 >= P_ENCRYPT) then
+                    next_state  <= ENCRYPT_C;
+                end if;
             end if;
         when ENCRYPT_C =>
             bdi_ready       <= '1';
@@ -357,10 +369,13 @@ key_index               <= std_logic_vector (key_count(1 downto 0));
             nlfsr_load      <= '1'; 
             next_state      <= TAG_B;
         when TAG_B =>
-            nlfsr_en        <= '1';
-            next_cycles     <= cycles + 1;
-            if (cycles + 1 >= P_TAG_1) then
-                next_state  <= TAG_C;
+            rdi_ready <= '1';
+            if rdi_valid = '1' then
+                nlfsr_en        <= '1';
+                next_cycles     <= cycles + 1;
+                if (cycles + 1 >= P_TAG_1) then
+                    next_state  <= TAG_C;
+                end if;
             end if;
         when TAG_C =>
             bdo_type        <= HDR_TAG;
@@ -384,10 +399,13 @@ key_index               <= std_logic_vector (key_count(1 downto 0));
             nlfsr_load      <= '1'; 
             next_state      <= TAG_E;
         when TAG_E =>
-            nlfsr_en        <= '1';
-            next_cycles     <= cycles + 1;
-            if (cycles + 1 >= P_TAG_2) then
-                next_state  <= TAG_F;
+            rdi_ready <= '1';
+            if rdi_valid = '1' then
+                nlfsr_en        <= '1';
+                next_cycles     <= cycles + 1;
+                if (cycles + 1 >= P_TAG_2) then
+                    next_state  <= TAG_F;
+                end if;
             end if;
         when TAG_F =>
             bdo_type        <= HDR_TAG;

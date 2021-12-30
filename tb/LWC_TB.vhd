@@ -186,6 +186,18 @@ begin
     end generate;
     do_data <= do_sum(N-1);
     
+    di_valid_proc : process
+    begin
+        rdi_valid <= '0';
+        wait for 100*clk_period;
+        rdi_valid <= '1';
+        wait for 100*clk_period;
+        rdi_valid <= '0';
+        wait for 100*clk_period;
+        rdi_valid <= '1';
+        wait;
+    end process;
+    
     ---END ADDED
 
     genClk: process
@@ -219,7 +231,7 @@ begin
         --ADDED
         rdi_data        => (others => '1'),
         rdi_ready       => rdi_ready,
-        rdi_valid       => '1' --rdi_valid
+        rdi_valid       => rdi_valid
     );
     
     pdi_data_delayed  <= transport pdi_data  after input_delay;

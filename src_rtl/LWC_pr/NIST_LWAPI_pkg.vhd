@@ -24,13 +24,14 @@
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.all;
+use work.design_pkg.all;
 
 package NIST_LWAPI_pkg is
 
     --! External bus: supported values are 8, 16 and 32 bits
     constant W       : integer :=32;
     constant SW      : integer :=W;
-    constant RW      : integer :=W;
+    constant RW      : integer :=NUM_RND_BITS;
     constant N       : integer :=2; --number of shares
     
 

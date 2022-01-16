@@ -23,17 +23,16 @@ entity dom_mul_reg is
         d    : in term_array;
         q    : out term_array
     );
+
+        
+    attribute DONT_TOUCH : string;
+    attribute DONT_TOUCH of dom_mul_reg : entity is "true";
 end dom_mul_reg;
 
 architecture behav of dom_mul_reg is
 
     attribute keep_hierarchy : string;
-    attribute keep_hierarchy of behav: architecture is "true"; 
-    
-    attribute keep : string;
-    attribute keep of d : signal is "true";
-    attribute keep of q : signal is "true";
-
+    attribute keep_hierarchy of behav: architecture is "true";
 
 begin
     reg: process(clk)

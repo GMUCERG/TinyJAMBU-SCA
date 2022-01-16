@@ -27,18 +27,14 @@ entity dom_mul_dep is
               downto 0);
         q   : out share_array 
     );
+        
+    attribute DONT_TOUCH : string;
+    attribute DONT_TOUCH of dom_mul_dep : entity is "true";
 end dom_mul_dep;
 
 architecture behav of dom_mul_dep is
     attribute keep_hierarchy : string;
 	attribute keep_hierarchy of behav : architecture is "true";
-    
-    attribute keep : string;
-	
-	attribute keep of x : signal is "true";  
-	attribute keep of y : signal is "true";  
-	attribute keep of rnd : signal is "true";  
-	attribute keep of q : signal is "true";  
     
     signal z : share_array;
     signal z_vect : std_logic_vector(SHARE_NUM*SHARE_WIDTH-1 downto 0);
@@ -54,6 +50,7 @@ architecture behav of dom_mul_dep is
     signal x_mul_b : share_array;
     signal dom_mul_q : share_array;
     --
+    attribute keep : string;
     attribute keep of z : signal is "true";  
 	attribute keep of z_vect : signal is "true";  
 	attribute keep of z_indep : signal is "true"; 

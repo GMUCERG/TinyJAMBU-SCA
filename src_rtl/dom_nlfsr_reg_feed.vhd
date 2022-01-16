@@ -19,6 +19,7 @@
 library ieee;
 use ieee.std_logic_1164.ALL;
 use ieee.numeric_std.all;
+use work.NIST_LWAPI_pkg.all;
 use work.design_pkg.all;
 
 entity dom_nlfsr_reg_feed is
@@ -37,6 +38,10 @@ entity dom_nlfsr_reg_feed is
         and_y       : out std_logic_vector(SHARE_WIDTH-1 downto 0);
         and_out     : in std_logic_vector(SHARE_WIDTH-1 downto 0)
     );
+
+        
+    attribute DONT_TOUCH : string;
+    attribute DONT_TOUCH of dom_nlfsr_reg_feed : entity is "true";
 end entity dom_nlfsr_reg_feed;
 
 architecture behav of dom_nlfsr_reg_feed is
@@ -51,9 +56,6 @@ architecture behav of dom_nlfsr_reg_feed is
     signal en_state : std_logic;
     
     attribute keep : string;
-	attribute keep of and_x : signal is "true"; 
-	attribute keep of and_y : signal is "true"; 
-	attribute keep of and_out : signal is "true"; 
 	attribute keep of reg : signal is "true"; 
 	attribute keep of feedback : signal is "true";
 	
@@ -70,7 +72,7 @@ begin
                    (not and_out) xor 
                    reg((47 + CONCURRENT) - 1 downto 47) xor 
                    reg((0 + CONCURRENT) - 1 downto 0) xor 
-                   key((to_integer(counter) + CONCURRENT) - 1 downto to_integer(counter));
+                   key((to_int01(counter) + CONCURRENT) - 1 downto to_int01(counter));
    end generate;
     feedback_gen1:
     if CONST_ADD = false generate
@@ -78,7 +80,7 @@ begin
                    ( and_out) xor 
                    reg((47 + CONCURRENT) - 1 downto 47) xor 
                    reg((0 + CONCURRENT) - 1 downto 0) xor 
-                   key((to_integer(counter) + CONCURRENT) - 1 downto to_integer(counter));
+                   key((to_int01(counter) + CONCURRENT) - 1 downto to_int01(counter));
    end generate;
     
     --==========================================================================================

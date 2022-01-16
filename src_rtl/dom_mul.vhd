@@ -26,6 +26,9 @@ entity dom_mul is
         z   : in std_logic_vector(SHARE_WIDTH*SHARE_NUM*(SHARE_NUM-1)/2 -1 downto 0);
         q   : out share_array 
     );
+        
+    attribute DONT_TOUCH : string;
+    attribute DONT_TOUCH of dom_mul : entity is "true";
 end dom_mul;
 
 architecture behav of dom_mul is
@@ -44,10 +47,6 @@ architecture behav of dom_mul is
 	attribute keep of t_reshared_regd : signal is "true";  
 	attribute keep of integ_res : signal is "true";  
 	attribute keep of z_arr : signal is "true";  
-	attribute keep of x : signal is "true";  
-	attribute keep of y : signal is "true";  
-	attribute keep of q : signal is "true";  
-	attribute keep of z : signal is "true";  
     
 begin
     --Map z to rnd_array

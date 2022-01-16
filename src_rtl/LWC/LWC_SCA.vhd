@@ -3,9 +3,8 @@
 --!
 --! @brief      LWC top level file
 --!
---! @author     Panasayya Yalla
---!             Ekawat (ice) Homsirikamol
---!             Kamyar Mohajerani
+--! @author     Panasayya Yalla & Ekawat (ice) Homsirikamol
+--!             Edited by Kamyar Mohajerani
 --!
 --! @copyright  Copyright (c) 2022 Cryptographic Engineering Research Group
 --!             ECE Department, George Mason University Fairfax, VA, U.S.A.
@@ -44,8 +43,9 @@ use ieee.std_logic_1164.all;
 
 use work.design_pkg.all;
 use work.NIST_LWAPI_pkg.all;
+use work.LWC_pkg.all;
 
-entity LWC is
+entity LWC_SCA is
     port(
         --! Global ports
         clk       : in  std_logic;
@@ -62,11 +62,15 @@ entity LWC is
         do_data   : out std_logic_vector(PDI_SHARES * W - 1 downto 0);
         do_ready  : in  std_logic;
         do_valid  : out std_logic;
-        do_last   : out std_logic
+        do_last   : out std_logic;
+        --! Random Input
+        rdi_data  : in  std_logic_vector(RW - 1 downto 0);
+        rdi_valid : in  std_logic;
+        rdi_ready : out std_logic
     );
-end LWC;
+end LWC_SCA;
 
-architecture structure of LWC is
+architecture structure of LWC_SCA is
     ------!Pre-Processor to CryptoCore (Key PISO)
     signal key_cipher_in              : std_logic_vector(SDI_SHARES * CCSW - 1 downto 0);
     signal key_valid_cipher_in        : std_logic;
@@ -105,9 +109,9 @@ architecture structure of LWC is
     signal cmd_valid_FIFO_out         : std_logic;
     signal cmd_ready_FIFO_out         : std_logic;
 
-    --============================================ Component Declarations ===========================================--
+    --==========================================================================
 
-    component CryptoCore
+    component CryptoCore_SCA
         port(
             clk             : in  STD_LOGIC;
             rst             : in  STD_LOGIC;
@@ -132,17 +136,20 @@ architecture structure of LWC is
             bdo_type        : out STD_LOGIC_VECTOR(4 - 1 downto 0);
             bdo_valid_bytes : out STD_LOGIC_VECTOR(CCW / 8 - 1 downto 0);
             end_of_block    : out STD_LOGIC;
+            --
             msg_auth_valid  : out STD_LOGIC;
             msg_auth_ready  : in  STD_LOGIC;
-            msg_auth        : out STD_LOGIC
+            msg_auth        : out STD_LOGIC;
+            --! Random Input
+            rdi_data        : in  std_logic_vector(RW - 1 downto 0);
+            rdi_valid       : in  std_logic;
+            rdi_ready       : out std_logic
         );
     end component;
 
 begin
     -- synthesis translate_off
-    assert false report "[LWC]" & LF & "  GW=" & integer'image(W) & "  SW=" & --
-        integer'image(SW) & LF & "  CCW=" & integer'image(CCW) & " CCSW=" & integer'image(CCSW) --
-        severity note;
+    assert false report "[LWC]" & LF & "  GW=" & integer'image(W) & "  SW=" & integer'image(SW) & LF & "  CCW=" & integer'image(CCW) & " CCSW=" & integer'image(CCSW) severity note;
     -- synthesis translate_on
 
     -- The following combinations (W, CCW) are supported in the current version
@@ -198,7 +205,7 @@ begin
             cmd_ready       => cmd_ready_FIFO_in
         );
 
-    Inst_CryptoCore : CryptoCore
+    Inst_CryptoCore : CryptoCore_SCA
         port map(
             clk             => clk,
             rst             => rst,
@@ -225,7 +232,10 @@ begin
             end_of_block    => end_of_block_cipher_out,
             msg_auth_valid  => msg_auth_valid,
             msg_auth_ready  => msg_auth_ready,
-            msg_auth        => msg_auth
+            msg_auth        => msg_auth,
+            rdi_data        => rdi_data,
+            rdi_valid       => rdi_valid,
+            rdi_ready       => rdi_ready
         );
 
     Inst_PostProcessor : entity work.PostProcessor

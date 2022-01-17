@@ -1,5 +1,10 @@
 [design]
-name = "TinyJambu-DOM-2"
+name = "TinyJAMBU_DOM1-v1"
+description = "TinyJAMBU with 1st order masking. W=CCW=32"
+author = ["Sammy Lin", "Abubakr Abdulgadir"]
+url = "https://github.com/GMUCERG/TinyJAMBU-SCA"
+license = "GPL-3.0"
+version = "0.2.0"
 language.vhdl.standard = "2008"
 
 [design.rtl]
@@ -38,8 +43,10 @@ clock_port = "clk"
 [design.tb]
 sources = ["src_tb/LWC_TB.vhd"]
 top = "LWC_TB"
-uut = "LWC"
+# uut = "uut"
+
 [design.tb.generics]
-G_FNAME_PDI = { file = "KAT/TinyJAMBU-DOM1-v1/pdi_shared.txt" }
-G_FNAME_SDI = { file = "KAT/TinyJAMBU-DOM1-v1/sdi_shared.txt" }
+G_FNAME_PDI = { file = "KAT/TinyJAMBU-DOM1-v1/pdi_shared_2.txt" }
+G_FNAME_SDI = { file = "KAT/TinyJAMBU-DOM1-v1/sdi_shared_2.txt" }
+G_FNAME_RDI = { file = "KAT/TinyJAMBU-DOM1-v1/rdi.txt" }
 G_FNAME_DO = { file = "KAT/TinyJAMBU-DOM1-v1/do.txt" }

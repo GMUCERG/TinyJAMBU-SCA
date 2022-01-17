@@ -680,11 +680,23 @@ package body LWC_pkg is
     function lwc_or_reduce(l : std_logic_vector) return std_logic is
     begin
         return std_logic(or_reduce(to_stdulogicvector(l)));
-    end function lwc_or_reduce;
+    end function;
 
     function lwc_to_hstring(value : std_logic_vector) return STRING is
     begin
         return to_hstring(to_stdulogicvector(value));
-    end function lwc_to_hstring;
+    end function;
+
+    function lwc_to_string(slv : std_logic_vector) return STRING is
+        type sl_map_type is array (std_ulogic) of character;
+        constant sl_map : sl_map_type := "UX01ZWLH-";
+         alias av : std_logic_vector(1 to slv'length) is slv;
+        variable ret : string (1 to slv'length) := (others => NUL);
+    begin
+        for i in ret'range loop
+            ret(i) := sl_map (av (i));
+        end loop;
+    return ret;
+    end function;
 
 end package body;

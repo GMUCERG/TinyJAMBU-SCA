@@ -129,7 +129,7 @@ architecture TB of LWC_TB is
             end if;
         end loop;
         return True;
-    end function word_pass;
+    end function;
 
     -- sum up all shares. Returns do_data if num_shares=1)
     function xor_shares(do_data : std_logic_vector; num_shares : positive) return std_logic_vector is
@@ -146,11 +146,11 @@ architecture TB of LWC_TB is
     impure function get_stalls(max_stalls : integer) return integer is
     begin
         return max_stalls;
-    end function get_stalls;
+    end function;
 
 begin
     --===========================================================================================--
-    -- generate UUT clock
+    -- generate clock
     clockProProc : process
     begin
         if not stop_clock then
@@ -163,7 +163,7 @@ begin
         end if;
     end process;
 
-    -- generate UUT reset
+    -- generate reset
     resetProc : process
     begin
         report LF & " -- Testvectors:  " & G_FNAME_PDI & " " & G_FNAME_SDI & " " & G_FNAME_DO & LF &
@@ -209,8 +209,8 @@ begin
             do_data   => do_data,
             do_last   => do_last,
             do_valid  => do_valid,
-            do_ready  => do_ready_delayed-- LWC_SCA:
-            , rdi_data => rdi_data_delayed,
+            do_ready  => do_ready_delayed,
+            rdi_data  => rdi_data_delayed,
             rdi_valid => rdi_valid_delayed,
             rdi_ready => rdi_ready
         );
@@ -518,19 +518,19 @@ begin
                 end if;
                 opcode   := tb_block(19 downto 16);
                 msgid    := to_integer(to_01(unsigned(tb_block(7 downto 0))));
-                write(logMsg, "Testcase #" & integer'image(testcase) & "  MsgID: " & integer'image(testcase) & " Operation: ");
+                write(logMsg, "Testcase #" & integer'image(testcase) & " MsgID:" & integer'image(testcase) & " Op:");
                 if (opcode = INST_HASH) then
-                    write(logMsg, string'("Hash"));
+                    write(logMsg, string'("HASH"));
                 else
                     if opcode = INST_ENC then
-                        write(logMsg, string'("Encryption"));
+                        write(logMsg, string'("ENC"));
                     elsif opcode = INST_DEC then
-                        write(logMsg, string'("Decryption"));
+                        write(logMsg, string'("DEC"));
                     else
-                        write(logMsg, string'("Unknown opcode=") & lwc_to_hstring(opcode));
+                        write(logMsg, string'("UNKNOWN opcode=") & lwc_to_hstring(opcode));
                     end if;
                     keyid := to_integer(to_01(unsigned(tb_block(15 downto 8))));
-                    write(logMsg, string'(" KeyID: ") & integer'image(keyid));
+                    write(logMsg, string'(" KeyID:") & integer'image(keyid));
                 end if;
                 report logMsg.all severity note;
                 writeline(log_file, logMsg);
@@ -550,7 +550,15 @@ begin
         else
             write(logMsg, string'("[PASS] "));
         end if;
+        file_close(do_file);
         write(logMsg, string'("Simulation completed in ") & integer'image(end_cycle) & " cycles.");
+        -- write(logMsg, string'(" Simulation time: ") & time'image(end_time));
+        writeline(log_file, logMsg);
+        --
+        if G_TEST_MODE = TESTMODE_TIMING then
+            file_close(timing_file);
+        end if;
+        file_close(log_file);
         --
         if failed then
             write(result_file, "1");
@@ -559,15 +567,7 @@ begin
             write(result_file, "0");
             report LF & LF & logMsg.all & LF severity note;
         end if;
-        write(logMsg, string'(" Simulation time: ") & time'image(end_time));
-        writeline(log_file, logMsg);
-        --
-        file_close(do_file);
         file_close(result_file);
-        file_close(log_file);
-        if G_TEST_MODE = TESTMODE_TIMING then
-            file_close(timing_file);
-        end if;
         --
         stop_clock <= True;
         -- Do not use a 'failure' to end the simulation.

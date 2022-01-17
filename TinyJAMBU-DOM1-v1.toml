@@ -11,7 +11,8 @@ sources = [
     "src_rtl/NIST_LWAPI_pkg.vhd",
     ## CryptoCore interface configuration:
     "src_rtl/design_pkg.vhd",
-    ## design sources:
+    ## design sources and LWC package
+    "src_rtl/LWC/LWC_pkg.vhd",
     "src_rtl/tinyjambu_dp_ops.vhd",
     "src_rtl/reg_n.vhd",
     "src_rtl/dom_mul_reg.vhd",
@@ -22,8 +23,6 @@ sources = [
     "src_rtl/tinyjambu_datapath.vhd",
     "src_rtl/tinyjambu_control.vhd",
     "src_rtl/CryptoCore.vhd",
-    ## LWC package:
-    "src_rtl/LWC/LWC_pkg.vhd",
     "src_rtl/LWC/key_piso.vhd",
     "src_rtl/LWC/data_piso.vhd",
     "src_rtl/LWC/PreProcessor.vhd",

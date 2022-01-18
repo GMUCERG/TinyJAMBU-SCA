@@ -33,7 +33,8 @@ sources = [
     "src_rtl/LWC/LWC_SCA.vhd",
 ]
 # includes = []
-top = "LWC"
+top = "LWC_SCA"
+clock.port = "clk"
 # clock.port = "clk"
 # reset.port = "reset"
 # reset.active_high = true
@@ -48,8 +49,9 @@ vhdl.version = "2008"
 
 [tb]
 sources = ["src_tb/LWC_TB.vhd"]
+top = "LWC_TB"
 # includes = []
-# top = "LWC_TB"
+
 [tb.parameters]
 G_FNAME_PDI = { file = "KAT/TinyJAMBU-DOM1-v1/pdi_shared_2.txt" }
 G_FNAME_SDI = { file = "KAT/TinyJAMBU-DOM1-v1/sdi_shared_2.txt" }

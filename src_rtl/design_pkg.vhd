@@ -109,11 +109,12 @@ package body design_pkg is
         return ret;
     end function;
 
-    --! concatinates slv_array_t elements into a single std_logic_vector
+    --! concatenates slv_array_t elements into a single std_logic_vector
     -- Big Endian
     function concat_be(a : slv_array_t) return std_logic_vector is
         constant n    : positive := a'length;
-        constant el_w : positive := a(0)'length;
+        constant el : std_logic_vector := a(0);
+        constant el_w : positive := el'length;
         variable ret  : std_logic_vector(el_w * n - 1 downto 0);
     begin
         for i in a'range loop
@@ -124,7 +125,8 @@ package body design_pkg is
 
     function concat_le(a : slv_array_t) return std_logic_vector is
         constant n    : positive := a'length;
-        constant el_w : positive := a(0)'length;
+        constant el : std_logic_vector := a(0);
+        constant el_w : positive := el'length;
         variable ret  : std_logic_vector(el_w * n - 1 downto 0);
     begin
         for i in a'range loop
@@ -133,17 +135,17 @@ package body design_pkg is
         return ret;
     end function;
 
-    function xor_slv_array(a : slv_array_t) return std_logic_vector is
-        constant el   : std_logic_vector := a(a'left);
-        constant el_w : POSITIVE         := el'length;
-        variable ret  : std_logic_vector(el_w - 1 downto 0);
-    begin
-        ret := a(0);
-        for i in 1 to a'length - 1 loop
-            ret := ret xor a(i);
-        end loop;
-        return ret;
-    end function;
+    -- function xor_slv_array(a : slv_array_t) return std_logic_vector is
+    --     constant el   : std_logic_vector := a(a'left);
+    --     constant el_w : POSITIVE         := el'length;
+    --     variable ret  : std_logic_vector(el_w - 1 downto 0);
+    -- begin
+    --     ret := a(0);
+    --     for i in 1 to a'length - 1 loop
+    --         ret := ret xor a(i);
+    --     end loop;
+    --     return ret;
+    -- end function;
 
     function TO_INT01(S : UNSIGNED) return INTEGER is
     begin

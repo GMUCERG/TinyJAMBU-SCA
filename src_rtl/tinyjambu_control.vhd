@@ -340,14 +340,14 @@ begin
                 bdo_sel         <= '1';
                 if (decrypt_in = '1') then
                     bdi_ready <= '1';
-                    if bdi_valid then
+                    if bdi_valid = '1' then
                         next_state <= TAG_D;
-                        if (xor_slv_array(bdo) /= xor_slv_array(bdi)) then
-                        if rising_edge(clk) then
-                            report "bdo=" & to_hstring(xor_slv_array(bdo)) & " /= bdi=" & to_hstring(xor_slv_array(bdi));
-                            end if;
-                            auth_failed_next  <= '1';
-                        end if;
+                        -- if (xor_slv_array(bdo) /= xor_slv_array(bdi)) then
+                        --     if rising_edge(clk) then
+                        --         report "bdo=" & to_hstring(xor_slv_array(bdo)) & " /= bdi=" & to_hstring(xor_slv_array(bdi));
+                        --     end if;
+                        --     auth_failed_next <= '1';
+                        -- end if;
                     end if;
                 else
                     bdo_valid <= '1';
@@ -379,9 +379,9 @@ begin
                 if (decrypt_in = '1') then
                     bdi_ready <= '1';
                     if (bdi_valid = '1') then
-                        if (xor_slv_array(bdo) /= xor_slv_array(bdi)) then
-                            auth_failed_next  <= '1';
-                        end if;
+                        -- if (xor_slv_array(bdo) /= xor_slv_array(bdi)) then
+                        --     auth_failed_next <= '1';
+                        -- end if;
                         next_state <= SEND_AUTH;
                     end if;
                 else
@@ -393,7 +393,7 @@ begin
 
             when SEND_AUTH =>
                 msg_auth_valid <= '1';
-                msg_auth       <= '1'; --not auth_failed;
+                msg_auth       <= '1';  --not auth_failed;
                 if (msg_auth_ready = '1') then
                     next_state <= IDLE;
                 end if;

@@ -75,6 +75,8 @@ package design_pkg is
     function TO_INT01(S : UNSIGNED) return INTEGER;
     function TO_INT01(S : STD_LOGIC_VECTOR) return INTEGER;
 
+    function xor_slv_array(a : slv_array_t) return std_logic_vector;
+   
 end design_pkg;
 
 package body design_pkg is
@@ -135,17 +137,17 @@ package body design_pkg is
         return ret;
     end function;
 
-    -- function xor_slv_array(a : slv_array_t) return std_logic_vector is
-    --     constant el   : std_logic_vector := a(a'left);
-    --     constant el_w : POSITIVE         := el'length;
-    --     variable ret  : std_logic_vector(el_w - 1 downto 0);
-    -- begin
-    --     ret := a(0);
-    --     for i in 1 to a'length - 1 loop
-    --         ret := ret xor a(i);
-    --     end loop;
-    --     return ret;
-    -- end function;
+    function xor_slv_array(a : slv_array_t) return std_logic_vector is
+        constant el   : std_logic_vector := a(a'left);
+        constant el_w : POSITIVE         := el'length;
+        variable ret  : std_logic_vector(el_w - 1 downto 0);
+    begin
+        ret := a(0);
+        for i in 1 to a'length - 1 loop
+            ret := ret xor a(i);
+        end loop;
+        return ret;
+    end function;
 
     function TO_INT01(S : UNSIGNED) return INTEGER is
     begin

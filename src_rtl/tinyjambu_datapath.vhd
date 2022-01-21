@@ -30,7 +30,7 @@ entity tinyjambu_datapath is
         nlfsr_load      : in  std_logic;
         partial         : in  std_logic;
         partial_bytes   : in  std_logic_vector(1 downto 0);
-        partial_bdo_out : in  std_logic_vector(CCW/8 - 1 downto 0);
+        partial_bdo_out : in  std_logic_vector(CCW / 8 - 1 downto 0);
         nlfsr_en        : in  std_logic;
         nlfsr_reset     : in  std_logic;
         decrypt         : in  std_logic;
@@ -60,33 +60,10 @@ architecture behav of tinyjambu_datapath is
 
 begin
 
-    dp_ops0 : entity work.tinyjambu_dp_ops(behav)
-        generic map(
-            CONST_ADD => true
-        )
-        port map(
-            clk             => clk,
-            partial         => partial,
-            partial_bytes   => partial_bytes,
-            partial_bdo_out => partial_bdo_out,
-            decrypt         => decrypt,
-            bdi             => bdi(0),
-            key             => key(0),
-            key_load        => key_load,
-            key_index       => key_index,
-            fbits_sel       => fbits_sel,
-            s_sel           => s_sel,
-            bdo_sel         => bdo_sel,
-            bdo             => bdo(0),
-            from_nlfsr      => nlfsr_dout(0),
-            to_nlfsr        => nlfsr_din(0),
-            nlfsr_key       => nlfsr_key(0)
-        );
-
-    gen_ops : for i in 1 to SHARE_NUM - 1 generate
+    gen_ops : for i in 0 to SHARE_NUM - 1 generate
         dp_ops : entity work.tinyjambu_dp_ops(behav)
             generic map(
-                CONST_ADD => false
+                CONST_ADD => i = 0
             )
             port map(
                 clk             => clk,

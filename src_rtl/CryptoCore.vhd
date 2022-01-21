@@ -70,7 +70,6 @@ architecture structural of CryptoCore_SCA is
 
     signal bdi_array, bdo_array : bdio_array;
     signal key_array            : sdi_array;
-    
 
     signal bdo_sel, nlfsr_load, nlfsr_en, nlfsr_reset, ctrl_decrypt : std_logic;
     signal key_load, partial                                        : std_logic;
@@ -79,7 +78,9 @@ architecture structural of CryptoCore_SCA is
 begin
     bdi_array <= chop_be(bdi, PDI_SHARES);
     key_array <= chop_be(key, SDI_SHARES);
-    bdo      <= concat_be(bdo_array);
+    bdo       <= concat_be(bdo_array);
+
+    -- bdo_sum <= xor_slv_array(bdo_array);
 
     datapath : entity work.tinyjambu_datapath
         port map(
@@ -120,6 +121,8 @@ begin
             bdo_valid       => bdo_valid,
             bdo_ready       => bdo_ready,
             bdo_type        => bdo_type,
+            bdo             => bdo_array,
+            bdi             => bdi_array,
             partial         => partial,
             partial_bytes   => partial_bytes,
             bdi_valid       => bdi_valid,

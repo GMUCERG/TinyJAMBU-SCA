@@ -46,7 +46,7 @@ entity tinyjambu_control is
         key_update      : in  std_logic;
         key_ready       : out std_logic;
         bdi_valid       : in  std_logic;
-        --        bdi             : in std_logic_vector       (CCW-1      downto 0);
+        bdi             : in  bdio_array;
         bdi_ready       : out std_logic;
         bdi_pad_loc     : in  std_logic_vector(CCWdiv8 - 1 downto 0);
         bdi_valid_bytes : in  std_logic_vector(CCWdiv8 - 1 downto 0);
@@ -54,7 +54,7 @@ entity tinyjambu_control is
         bdi_eoi         : in  std_logic;
         bdi_eot         : in  std_logic;
         bdi_type        : in  std_logic_vector(3 downto 0);
-        --        bdo             : in std_logic_vector       (CCW-1      downto 0); 
+        bdo             : in  bdio_array;
         bdo_type        : out std_logic_vector(3 downto 0);
         bdo_ready       : in  std_logic;
         bdo_valid       : out std_logic;
@@ -81,8 +81,7 @@ architecture behavioral of tinyjambu_control is
     constant NUM_KEY_WORDS : natural := 4;
 
     -- CryptoCore States
-    type state_type is (RST,
-                        IDLE,
+    type state_type is (IDLE,
                         -- Load and process the key
                         LOAD_KEY, KEY_INIT,
                         -- Process the nonce
@@ -92,7 +91,7 @@ architecture behavioral of tinyjambu_control is
                         -- Process plaintext/ciphertext
                         ENCRYPT_A, ENCRYPT_B, ENCRYPT_C,
                         -- Generate the 64 bit tag
-                        TAG_A, TAG_B, TAG_C, TAG_D, TAG_E, TAG_F);
+                        TAG_A, TAG_B, TAG_C, TAG_D, TAG_E, TAG_F, SEND_AUTH);
 
     signal state      : state_type := IDLE;
     signal next_state : state_type := IDLE;
@@ -107,7 +106,6 @@ architecture behavioral of tinyjambu_control is
     signal next_npub : unsigned(1 downto 0);
 
     signal auth_failed, auth_failed_next : std_logic;
-    signal auth_failed_en                : std_logic;
     signal wrd_cnt, next_wrd_cnt         : unsigned(8 - 1 downto 0);
 
 begin
@@ -118,23 +116,20 @@ begin
     begin
         if rising_edge(clk) then
             if (reset = '1') then
-                state     <= RST;
-                npub      <= (others => '0');
-                key_count <= (others => '0');
-                cycles    <= (others => '0');
-
+                state       <= IDLE;
+                ---- initialized in IDLE so no need to reset:
+                npub        <= (others => '0');
+                key_count   <= (others => '0');
+                cycles      <= (others => '0');
                 auth_failed <= '0';
                 wrd_cnt     <= (others => '0');
             else
-                state     <= next_state;
-                npub      <= next_npub;
-                key_count <= next_key_count;
-                cycles    <= next_cycles;
-
-                if (auth_failed_en = '1') then
-                    auth_failed <= auth_failed_next;
-                end if;
-                wrd_cnt <= next_wrd_cnt;
+                state       <= next_state;
+                npub        <= next_npub;
+                key_count   <= next_key_count;
+                cycles      <= next_cycles;
+                auth_failed <= auth_failed_next;
+                wrd_cnt     <= next_wrd_cnt;
             end if;
         end if;
     end process;
@@ -161,44 +156,39 @@ begin
         s_sel           <= (others => '1');
         fbits_sel       <= (others => '0');
         partial_bytes   <= (others => '0');
-        next_key_count  <= (others => '0');
-        next_npub       <= (others => '0');
-        next_cycles     <= (others => '0');
 
-        next_state   <= state;
-        next_wrd_cnt <= wrd_cnt;
+        next_npub        <= npub;
+        next_key_count   <= key_count;
+        next_cycles      <= cycles;
+        next_state       <= state;
+        next_wrd_cnt     <= wrd_cnt;
+        auth_failed_next <= auth_failed;
         --
-        rdi_ready    <= '0';
-        auth_failed_en <= '0';
+        rdi_ready        <= '0';
 
         case state is
-            when RST =>
-                next_state   <= IDLE;
-                next_wrd_cnt <= (others => '0');
 
             --! =========================================================== 
             when IDLE =>
                 --bdi_ready       <= '1';
-                s_sel          <= b"11";
-                nlfsr_reset    <= '1';
+                s_sel            <= b"11";
+                nlfsr_reset      <= '1';
                 if (key_valid = '1' and key_update = '1') then
                     next_state <= LOAD_KEY;
                 end if;
                 ---
-                next_npub      <= (others => '0');
-                next_key_count <= (others => '0');
-                next_cycles    <= (others => '0');
-
-                --            auth_failed <= '0';
-                next_wrd_cnt <= (others => '0');
+                next_npub        <= (others => '0');
+                next_key_count   <= (others => '0');
+                next_cycles      <= (others => '0');
+                auth_failed_next <= '0';
+                next_wrd_cnt     <= (others => '0');
 
             when LOAD_KEY =>
-                key_ready      <= '1';
-                next_key_count <= key_count;
+                key_ready <= '1';
                 if (key_valid = '1') then
                     key_load       <= '1';
                     next_key_count <= key_count + 1;
-                    if ((key_count + 1) >= NUM_KEY_WORDS) then
+                    if key_count = NUM_KEY_WORDS - 1 then
                         next_state <= KEY_INIT;
                     end if;
                 end if;
@@ -207,40 +197,41 @@ begin
                 if rdi_valid = '1' then
                     nlfsr_en    <= '1';
                     next_cycles <= cycles + 1;
-                    if (cycles + 1 >= P_KEYSETUP) then
+                    if cycles = P_KEYSETUP - 1 then
                         next_state <= NPUB_INIT_A;
                     end if;
                 end if;
             when NPUB_INIT_A =>
-                fbits_sel  <= b"00";
-                s_sel      <= b"00";
-                nlfsr_load <= '1';
-                next_state <= NPUB_INIT_B;
-                next_npub  <= npub;
+                fbits_sel   <= b"00";
+                s_sel       <= b"00";
+                nlfsr_load  <= '1';
+                next_cycles <= (others => '0');
+                next_npub   <= npub;
+                next_state  <= NPUB_INIT_B;
             when NPUB_INIT_B =>
                 rdi_ready <= '1';
                 if rdi_valid = '1' then
                     nlfsr_en    <= '1';
                     next_cycles <= cycles + 1;
                     next_npub   <= npub;
-                    if (cycles + 1 >= P_NPUBSETUP) then
+                    if cycles = P_NPUBSETUP - 1 then
                         next_state <= NPUB_INIT_C;
                     end if;
                 end if;
             when NPUB_INIT_C =>
                 s_sel     <= b"01";
                 next_npub <= npub;
+                bdi_ready <= '1';
                 if (bdi_valid = '1') then
-                    bdi_ready  <= '1';
                     nlfsr_load <= '1';
-                    if (npub >= 2) then
+                    if (npub = 2) then
                         next_state <= WAIT_AD;
+                        if (bdi_eoi = '1') then
+                            next_state <= TAG_A;
+                        end if;
                     else
                         next_npub  <= npub + 1;
                         next_state <= NPUB_INIT_A;
-                    end if;
-                    if (bdi_eoi = '1') then
-                        next_state <= TAG_A;
                     end if;
                 end if;
             when WAIT_AD =>
@@ -252,23 +243,24 @@ begin
                     end if;
                 end if;
             when AD_A =>
-                fbits_sel  <= b"01";
-                s_sel      <= b"00";
-                nlfsr_load <= '1';
-                next_state <= AD_B;
+                fbits_sel   <= b"01";
+                s_sel       <= b"00";
+                nlfsr_load  <= '1';
+                next_state  <= AD_B;
+                next_cycles <= (others => '0');
             when AD_B =>
                 rdi_ready <= '1';
                 if rdi_valid = '1' then
                     nlfsr_en    <= '1';
                     next_cycles <= cycles + 1;
-                    if (cycles + 1 >= P_AD) then
+                    if cycles = P_AD - 1 then
                         next_state <= AD_C;
                     end if;
                 end if;
             when AD_C =>
                 bdi_ready <= '1';
+                s_sel     <= b"01";
                 if (bdi_valid = '1') then
-                    s_sel      <= b"01";
                     nlfsr_load <= '1';
                     if (bdi_eot = '1') then
                         if (bdi_eoi = '1') then
@@ -287,113 +279,123 @@ begin
                     end if;
                 end if;
             when ENCRYPT_A =>
-                fbits_sel  <= b"10";
-                s_sel      <= b"00";
-                nlfsr_load <= '1';
-                next_state <= ENCRYPT_B;
+                fbits_sel   <= b"10";
+                s_sel       <= b"00";
+                nlfsr_load  <= '1';
+                next_cycles <= (others => '0');
+                next_state  <= ENCRYPT_B;
             when ENCRYPT_B =>
                 rdi_ready <= '1';
                 if rdi_valid = '1' then
                     nlfsr_en    <= '1';
                     next_cycles <= cycles + 1;
-                    if (cycles + 1 >= P_ENCRYPT) then
+                    if cycles = P_ENCRYPT - 1 then
                         next_state <= ENCRYPT_C;
                     end if;
                 end if;
             when ENCRYPT_C =>
                 bdi_ready <= '1';
+                s_sel     <= b"01";
+                if (decrypt_in = '1') then
+                    bdo_type    <= HDR_PT;
+                    decrypt_out <= '1';
+                else
+                    bdo_type <= HDR_CT;
+                end if;
                 if (bdi_valid = '1') then
-                    s_sel           <= b"01";
                     bdo_valid       <= '1';
                     bdo_valid_bytes <= bdi_valid_bytes;
                     nlfsr_load      <= '1';
-                    if (decrypt_in = '1') then
-                        bdo_type    <= HDR_PT;
-                        decrypt_out <= '1';
-                    else
-                        bdo_type <= HDR_CT;
-                    end if;
                     if (bdi_eot = '1') then
                         end_of_block <= '1';
-                        next_state   <= TAG_A;
                         if (bdi_valid_bytes = b"0000") then
                             nlfsr_load <= '0';
                         else
                             partial       <= '1';
                             partial_bytes <= bdi_size(1 downto 0);
                         end if;
+                        next_state   <= TAG_A;
                     else
                         next_state <= ENCRYPT_A;
                     end if;
                 end if;
             when TAG_A =>
-                fbits_sel  <= b"11";
-                s_sel      <= b"00";
-                nlfsr_load <= '1';
-                next_state <= TAG_B;
+                fbits_sel   <= b"11";
+                s_sel       <= b"00";
+                nlfsr_load  <= '1';
+                next_cycles <= (others => '0');
+                next_state  <= TAG_B;
             when TAG_B =>
                 rdi_ready <= '1';
                 if rdi_valid = '1' then
                     nlfsr_en    <= '1';
                     next_cycles <= cycles + 1;
-                    if (cycles + 1 >= P_TAG_1) then
+                    if cycles = P_TAG_1 - 1 then
                         next_state <= TAG_C;
                     end if;
                 end if;
             when TAG_C =>
                 bdo_type        <= HDR_TAG;
-                bdo_valid       <= '1';
                 bdo_valid_bytes <= (others => '1');
                 bdo_sel         <= '1';
-                if (bdo_ready = '1') then
-                    next_state <= TAG_D;
-                end if;
                 if (decrypt_in = '1') then
-                    bdi_ready  <= '1';
-                    next_state <= TAG_D;
-                    -- if (bdo /= bdi) then
-                    --     auth_failed_en <= '1';
-                    --     auth_failed    <= '1';
-                    -- end if;
+                    bdi_ready <= '1';
+                    if bdi_valid then
+                        next_state <= TAG_D;
+                        if (xor_slv_array(bdo) /= xor_slv_array(bdi)) then
+                        if rising_edge(clk) then
+                            report "bdo=" & to_hstring(xor_slv_array(bdo)) & " /= bdi=" & to_hstring(xor_slv_array(bdi));
+                            end if;
+                            auth_failed_next  <= '1';
+                        end if;
+                    end if;
+                else
+                    bdo_valid <= '1';
+                    if (bdo_ready = '1') then
+                        next_state <= TAG_D;
+                    end if;
                 end if;
             when TAG_D =>
-                fbits_sel  <= b"11";
-                s_sel      <= b"00";
-                nlfsr_load <= '1';
-                next_state <= TAG_E;
+                fbits_sel   <= b"11";
+                s_sel       <= b"00";
+                nlfsr_load  <= '1';
+                next_cycles <= (others => '0');
+                next_state  <= TAG_E;
             when TAG_E =>
                 rdi_ready <= '1';
                 if rdi_valid = '1' then
                     nlfsr_en    <= '1';
                     next_cycles <= cycles + 1;
-                    if (cycles + 1 >= P_TAG_2) then
+                    if cycles = P_TAG_2 - 1 then
                         next_state <= TAG_F;
                     end if;
                 end if;
             when TAG_F =>
                 bdo_type        <= HDR_TAG;
-                bdo_valid       <= '1';
                 bdo_valid_bytes <= (others => '1');
                 bdo_sel         <= '1';
                 end_of_block    <= '1';
-                if (bdo_ready <= '1') then
-                    next_state <= IDLE;
-                end if;
+
                 if (decrypt_in = '1') then
-                    msg_auth_valid <= '1';
-                    bdi_ready      <= '1';
-                    --                if (bdo = bdi) then
-                    msg_auth       <= '1';
-                    --                else
-                    --                    msg_auth <= '0';
-                    --                end if;
-                    -- Previous tag check failed, override the msg_auth flag
-                    if (auth_failed = '1') then
-                        msg_auth <= '0';
+                    bdi_ready <= '1';
+                    if (bdi_valid = '1') then
+                        if (xor_slv_array(bdo) /= xor_slv_array(bdi)) then
+                            auth_failed_next  <= '1';
+                        end if;
+                        next_state <= SEND_AUTH;
                     end if;
-                    if (msg_auth_ready = '1') then
+                else
+                    bdo_valid <= '1';
+                    if (bdo_ready <= '1') then
                         next_state <= IDLE;
                     end if;
+                end if;
+
+            when SEND_AUTH =>
+                msg_auth_valid <= '1';
+                msg_auth       <= '1'; --not auth_failed;
+                if (msg_auth_ready = '1') then
+                    next_state <= IDLE;
                 end if;
         end case;
     end process;

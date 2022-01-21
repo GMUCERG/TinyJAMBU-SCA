@@ -59,8 +59,6 @@ architecture behav of tinyjambu_dp_ops is
     signal s_mux_out            : std_logic_vector(REG_SIZE - 1 downto 0);
     signal partial_full_mux_out : std_logic_vector(95 downto 0);
     signal partial_out          : std_logic_vector(95 downto 0);
-    signal bdo_masked_out       : std_logic_vector(CCW - 1 downto 0);
-    signal bdo_masked           : std_logic_vector(CCW - 1 downto 0);
     signal in_xor_out           : std_logic_vector(CCW - 1 downto 0);
     signal m_mux_out            : std_logic_vector(CCW - 1 downto 0);
     signal bdo_out              : std_logic_vector(CCW - 1 downto 0);
@@ -70,8 +68,6 @@ architecture behav of tinyjambu_dp_ops is
     signal tag_swapped          : std_logic_vector(CCSW - 1 downto 0);
     signal key_swapped          : std_logic_vector(CCSW - 1 downto 0);
     signal bdo_mux_out          : std_logic_vector(CCW - 1 downto 0); -- Select between c/m and tag
-    signal pad_mux_out          : std_logic_vector(CCW - 1 downto 0);
-    signal tag                  : std_logic_vector(CCW - 1 downto 0);
     signal full_key             : std_logic_vector(REG_SIZE - 1 downto 0);
 
     --signal for the NLFSR

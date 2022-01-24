@@ -59,6 +59,7 @@ architecture behav of tinyjambu_dp_ops is
     signal s_mux_out            : std_logic_vector(REG_SIZE - 1 downto 0);
     signal partial_full_mux_out : std_logic_vector(95 downto 0);
     signal partial_out          : std_logic_vector(95 downto 0);
+    signal bdo_masked           : std_logic_vector (CCW-1 downto 0);
     signal in_xor_out           : std_logic_vector(CCW - 1 downto 0);
     signal m_mux_out            : std_logic_vector(CCW - 1 downto 0);
     signal bdo_out              : std_logic_vector(CCW - 1 downto 0);
@@ -87,6 +88,12 @@ begin
     bdo_out     <= s(95 downto 64) xor bdi_swapped;
     bdo_swapped <= bdo_out(7 downto 0) & bdo_out(15 downto 8) & bdo_out(23 downto 16) & bdo_out(31 downto 24);
 
+    with partial_bdo_out select
+    bdo_masked      <= x"000000" & bdo_out(7  downto 0) when "1000",
+                       x"0000"   & bdo_out(15 downto 0) when "1100",
+                       x"00"     & bdo_out(23 downto 0)  when "1110",
+                       bdo_out(31 downto 0)  when others;
+
     bdo <= bdo_mux_out;
 
     tag_out <= s(95 downto 64);
@@ -101,8 +108,7 @@ begin
 
     -- Multiplexer to select which input we want to XOR with the state
     with decrypt select m_mux_out <=
-        -- bdo_masked when '1',
-        bdo_out when '1',
+        bdo_masked when '1',
         bdi_swapped when others;
 
     with bdo_sel select bdo_mux_out <=

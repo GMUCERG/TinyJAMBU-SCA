@@ -118,11 +118,11 @@ begin
             if (reset = '1') then
                 state       <= IDLE;
                 ---- initialized in IDLE so no need to reset:
-                npub        <= (others => '0');
-                key_count   <= (others => '0');
-                cycles      <= (others => '0');
-                auth_failed <= '0';
-                wrd_cnt     <= (others => '0');
+                -- npub        <= (others => '0');
+                -- key_count   <= (others => '0');
+                -- cycles      <= (others => '0');
+                -- auth_failed <= '0';
+                -- wrd_cnt     <= (others => '0');
             else
                 state       <= next_state;
                 npub        <= next_npub;
@@ -180,9 +180,8 @@ begin
                 next_npub        <= (others => '0');
                 next_key_count   <= (others => '0');
                 next_cycles      <= (others => '0');
-                auth_failed_next <= '0';
                 next_wrd_cnt     <= (others => '0');
-
+                auth_failed_next <= '0';
             when LOAD_KEY =>
                 key_ready <= '1';
                 if (key_valid = '1') then
@@ -342,12 +341,13 @@ begin
                     bdi_ready <= '1';
                     if bdi_valid = '1' then
                         next_state <= TAG_D;
-                        -- if (xor_slv_array(bdo) /= xor_slv_array(bdi)) then
-                        --     if rising_edge(clk) then
-                        --         report "bdo=" & to_hstring(xor_slv_array(bdo)) & " /= bdi=" & to_hstring(xor_slv_array(bdi));
-                        --     end if;
-                        --     auth_failed_next <= '1';
-                        -- end if;
+                        -- FIXME for debug only
+                        if (xor_slv_array(bdo) /= xor_slv_array(bdi)) then
+                            -- if rising_edge(clk) then
+                            --     report "bdo=" & to_hstring(xor_slv_array(bdo)) & " /= bdi=" & to_hstring(xor_slv_array(bdi));
+                            -- end if;
+                            auth_failed_next <= '1';
+                        end if;
                     end if;
                 else
                     bdo_valid <= '1';
@@ -379,9 +379,10 @@ begin
                 if (decrypt_in = '1') then
                     bdi_ready <= '1';
                     if (bdi_valid = '1') then
-                        -- if (xor_slv_array(bdo) /= xor_slv_array(bdi)) then
-                        --     auth_failed_next <= '1';
-                        -- end if;
+                        -- FIXME just for debuging
+                        if (xor_slv_array(bdo) /= xor_slv_array(bdi)) then
+                            auth_failed_next <= '1';
+                        end if;
                         next_state <= SEND_AUTH;
                     end if;
                 else

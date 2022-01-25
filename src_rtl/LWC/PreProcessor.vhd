@@ -88,11 +88,11 @@ architecture PreProcessor of PreProcessor is
     type t_state is (S_INST, S_INST_KEY, S_HDR_KEY, S_LD_KEY, S_HDR, S_LD, S_LD_EMPTY);
 
     --======================================= Registers =========================================--
-    signal state                            : t_state; -- FSM state
-    signal segment_counter                  : unsigned(SEGLEN_BITS - 1 downto 0);
-    signal input_ended, eot_flag, last_flag : std_logic;
-    signal decrypt_op, hash_op              : boolean;
-    signal hdr_type                         : std_logic_vector(bdi_type'range);
+    signal state                         : t_state; -- FSM state
+    signal segment_counter               : unsigned(SEGLEN_BITS - 1 downto 0);
+    signal eoi_flag, eot_flag, last_flag : std_logic;
+    signal decrypt_op, hash_op           : boolean;
+    signal hdr_type                      : std_logic_vector(bdi_type'range);
 
     --========================================= Wires ===========================================--
     signal bdi_eoi_p, bdi_eot_p              : std_logic;
@@ -103,6 +103,8 @@ architecture PreProcessor of PreProcessor is
     signal bdi_size_p                        : std_logic_vector(2 downto 0);
     signal bdi_pad_loc_p                     : std_logic_vector(W / 8 - 1 downto 0);
     signal op_is_actkey, op_is_hash          : boolean;
+    -- If the current PDI input is a part of a segment header, it's the first (last) word of it
+    -- NOTE: hdr_first/hdr_last are not always mutually exclusive, e.g. W=32
     signal hdr_first, hdr_last               : boolean;
     signal reading_pdi_hdr, reading_pdi_data : boolean;
     signal reading_sdi_hdr, reading_sdi_data : boolean;
@@ -259,23 +261,14 @@ begin
     process(clk)
     begin
         if rising_edge(clk) then
-            if hdr_last and ((reading_pdi_hdr and pdi_fire) or (reading_sdi_hdr and sdi_fire)) then
-                segment_counter <= unsigned(seglen);
-            elsif (reading_pdi_data and pdi_fire) or (reading_sdi_data and sdi_fire) then
-                segment_counter_hi <= segment_counter_hi - 1;
-            end if;
-
-            --! for simulation only
-            -- synthesis translate_off
-            assert not received_wrong_header
-            report "[PreProcessor] Received unexpected header at state: " & t_state'image(state)
-            severity failure;
-            -- synthesis translate_on
             case state is
                 when S_INST =>
                     hash_op    <= False;
                     decrypt_op <= False;
-                    input_ended <= '0';
+                    -- not really required:
+                    eoi_flag  <= '0';
+                    eot_flag  <= '0';
+                    last_flag <= '0';
 
                     if pdi_fire then
                         if op_is_actkey then
@@ -286,21 +279,45 @@ begin
                         end if;
                     end if;
 
-                when S_HDR =>
-                    if pdi_fire and hdr_first then
-                        hdr_type <= pdi_hdr_type;
-                    end if;
-                    if hdr_first then
-                        if pdi_hdr_eoi = '1' then
-                            input_ended <= '1';
+                when S_HDR_KEY =>
+                    if sdi_fire then
+                        if hdr_last then
+                            segment_counter <= unsigned(seglen);
                         end if;
-                        eot_flag  <= pdi_hdr_eot;
-                        last_flag <= pdi_hdr_last;
+                    end if;
+
+                when S_LD_KEY =>
+                    if sdi_fire then
+                        segment_counter_hi <= segment_counter_hi - 1;
+                    end if;
+
+                when S_HDR =>
+                    if pdi_fire then
+                        if hdr_first then
+                            eoi_flag  <= pdi_hdr_eoi;
+                            eot_flag  <= pdi_hdr_eot;
+                            last_flag <= pdi_hdr_last;
+                            hdr_type  <= pdi_hdr_type;
+                        end if;
+                        if hdr_last then
+                            segment_counter <= unsigned(seglen);
+                        end if;
+                    end if;
+
+                when S_LD =>
+                    if pdi_fire then
+                        segment_counter_hi <= segment_counter_hi - 1;
                     end if;
 
                 when others =>
                     null;
             end case;
+            --! for simulation only
+            -- synthesis translate_off
+            assert not received_wrong_header
+            report "[PreProcessor] Received unexpected header at state: " & t_state'image(state)
+            severity failure;
+            -- synthesis translate_on
         end if;
     end process;
 
@@ -318,7 +335,7 @@ begin
 
     pdi_fire  <= pdi_valid = '1' and pdi_ready_o = '1';
     sdi_fire  <= sdi_valid = '1' and sdi_ready_o = '1';
-    bdi_eoi_p <= input_ended and to_std_logic(last_flit_of_segment);
+    bdi_eoi_p <= eoi_flag and to_std_logic(last_flit_of_segment);
     bdi_eot_p <= eot_flag and to_std_logic(last_flit_of_segment);
 
     op_is_actkey   <= pdi_hdr_opcode = INST_ACTKEY;
@@ -336,9 +353,10 @@ begin
     --===========================================================================================--
     --= When using VHDL 2008+ change to
     -- process(all)
-    process(state, pdi_valid, pdi_fire, sdi_hdr_opcode, sdi_valid, sdi_fire, key_ready_p, --
-        last_flit_of_segment, cmd_ready, bdi_ready_p, reading_pdi_hdr, reading_sdi_hdr, --
-        seglen_is_zero, hdr_first, hdr_last, op_is_actkey, last_flag, hash_op, cur_hdr_last, relay_hdr_to_postproc)
+    process(state, pdi_valid, pdi_fire, sdi_hdr, sdi_valid, sdi_fire, key_ready_p, --
+        last_flit_of_segment, cmd_ready, bdi_ready_p, reading_pdi_hdr, reading_sdi_hdr, pdi_hdr, --
+        seglen_is_zero, hdr_first, hdr_last, op_is_actkey, last_flag, hash_op, cur_hdr_last, --
+        relay_hdr_to_postproc)
     begin
         -- Default Values
         sdi_ready_o           <= to_std_logic(reading_sdi_hdr);
@@ -410,17 +428,20 @@ begin
                     pdi_ready_o <= cmd_ready;
                     cmd_valid   <= pdi_valid;
                 end if;
-                if pdi_fire and hdr_last then
-                    if seglen_is_zero then -- empty segment
-                        if hash_op then
-                            nx_state <= S_LD_EMPTY;
-                        elsif cur_hdr_last = '1' then
-                            nx_state <= S_INST;
+                if pdi_fire then
+
+                    if hdr_last then
+                        if seglen_is_zero then -- empty segment
+                            if hash_op then
+                                nx_state <= S_LD_EMPTY;
+                            elsif cur_hdr_last = '1' then
+                                nx_state <= S_INST;
+                            else
+                                nx_state <= S_HDR;
+                            end if;
                         else
-                            nx_state <= S_HDR;
+                            nx_state <= S_LD;
                         end if;
-                    else
-                        nx_state <= S_LD;
                     end if;
                 end if;
 

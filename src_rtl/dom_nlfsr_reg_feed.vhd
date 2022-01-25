@@ -103,6 +103,6 @@ begin
         end if;
     end process;
 
-    en_state <= '1' when cnt = 1 else '0';
+    en_state <= '1' when enable = '1' and cnt = 1 else '0';
 
-end architecture behav;
+end architecture;

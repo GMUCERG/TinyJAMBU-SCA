@@ -30,12 +30,12 @@ entity CryptoCore_SCA is
         clk             : in  std_logic;
         rst             : in  std_logic;
         ----!key----------------------------------------------------
-        key             : in  STD_LOGIC_VECTOR(SDI_SHARES * CCSW - 1 downto 0);
+        key             : in  std_logic_vector(SDI_SHARES * CCSW - 1 downto 0);
         key_valid       : in  std_logic;
         key_update      : in  std_logic;
         key_ready       : out std_logic;
         ----!Data----------------------------------------------------
-        bdi             : in  STD_LOGIC_VECTOR(PDI_SHARES * CCW - 1 downto 0);
+        bdi             : in  std_logic_vector(PDI_SHARES * CCW - 1 downto 0);
         bdi_valid       : in  std_logic;
         bdi_ready       : out std_logic;
         bdi_pad_loc     : in  std_logic_vector(CCWdiv8 - 1 downto 0);
@@ -47,7 +47,7 @@ entity CryptoCore_SCA is
         decrypt_in      : in  std_logic;
         hash_in         : in  std_logic;
         --!Post Processor=========================================
-        bdo             : out STD_LOGIC_VECTOR(PDI_SHARES * CCW - 1 downto 0);
+        bdo             : out std_logic_vector(PDI_SHARES * CCW - 1 downto 0);
         bdo_valid       : out std_logic;
         bdo_ready       : in  std_logic;
         bdo_type        : out std_logic_vector(4 - 1 downto 0);
@@ -57,7 +57,7 @@ entity CryptoCore_SCA is
         msg_auth_ready  : in  std_logic;
         msg_auth        : out std_logic;
         --! Random Input
-        rdi_data        : in  std_logic_vector(RW - 1 downto 0);
+        rdi             : in  std_logic_vector(RW - 1 downto 0);
         rdi_valid       : in  std_logic;
         rdi_ready       : out std_logic
     );
@@ -74,13 +74,14 @@ architecture structural of CryptoCore_SCA is
     signal bdo_sel, nlfsr_load, nlfsr_en, nlfsr_reset, ctrl_decrypt : std_logic;
     signal key_load, partial                                        : std_logic;
     signal fbits_sel, s_sel, key_index, partial_bytes               : std_logic_vector(1 downto 0);
+    -- tag verification
+    signal cc_tag_last, cc_tag_valid, cc_tag_ready                  : std_logic;
+    signal tv_bdi_ready, tv_rdi_valid, tv_rdi_ready                 : std_logic;
 
 begin
     bdi_array <= chop_be(bdi, PDI_SHARES);
     key_array <= chop_be(key, SDI_SHARES);
     bdo       <= concat_be(bdo_array);
-
-    -- bdo_sum <= xor_slv_array(bdo_array);
 
     datapath : entity work.tinyjambu_datapath
         port map(
@@ -101,7 +102,7 @@ begin
             key             => key_array,
             bdo_sel         => bdo_sel,
             bdo             => bdo_array,
-            rnd             => rdi_data
+            rnd             => rdi
         );
 
     control : entity work.tinyjambu_control
@@ -127,7 +128,6 @@ begin
             partial_bytes   => partial_bytes,
             bdi_valid       => bdi_valid,
             bdi_ready       => bdi_ready,
-            bdi_pad_loc     => bdi_pad_loc,
             bdi_size        => bdi_size,
             bdi_eoi         => bdi_eoi,
             bdi_eot         => bdi_eot,
@@ -137,13 +137,42 @@ begin
             bdi_type        => bdi_type,
             fbits_sel       => fbits_sel,
             bdo_sel         => bdo_sel,
-            hash_in         => hash_in,
             s_sel           => s_sel,
-            msg_auth_valid  => msg_auth_valid,
-            msg_auth_ready  => msg_auth_ready,
-            msg_auth        => msg_auth,
             rdi_valid       => rdi_valid,
-            rdi_ready       => rdi_ready
+            rdi_ready       => rdi_ready,
+            -- Tag verification:
+            cc_tag_last     => cc_tag_last,
+            cc_tag_valid    => cc_tag_valid,
+            cc_tag_ready    => cc_tag_ready,
+            tv_rdi_valid    => tv_rdi_valid,
+            tv_rdi_ready    => tv_rdi_ready,
+            tv_done         => msg_auth_valid and msg_auth_ready -- in
+        );
+
+    INST_TAG_VERIF : entity work.tag_verif
+        port map(
+            clk            => clk,
+            rst            => rst,
+            -- Tag received
+            bdi            => bdi,
+            bdi_type       => bdi_type,
+            bdi_last       => bdi_eot,
+            bdi_valid      => cc_tag_valid and bdi_valid,
+            bdi_ready      => open,     -- don't need it
+            -- CryptoCore
+            cc_tag         => bdo,
+            cc_tag_last    => cc_tag_last,
+            cc_tag_valid   => cc_tag_valid,
+            cc_tag_ready   => cc_tag_ready,
+            --
+            --
+            rdi            => rdi(PDI_SHARES * CCW - 1 downto 0), -- TODO
+            rdi_valid      => tv_rdi_valid,
+            rdi_ready      => tv_rdi_ready,
+            --
+            msg_auth_valid => msg_auth_valid,
+            msg_auth_ready => msg_auth_ready,
+            msg_auth       => msg_auth
         );
 
 end architecture;

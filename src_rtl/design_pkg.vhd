@@ -76,6 +76,33 @@ package design_pkg is
     function TO_INT01(S : STD_LOGIC_VECTOR) return INTEGER;
 
     function xor_slv_array(a : slv_array_t) return std_logic_vector;
+
+    -- # HDL attributes to prevent optimization or retiming of logic or registers
+    --------------------------------------
+    -- ## Xilinx Vivado
+    -- DONT_TOUCH: prevent logic optimization of either signals or hierarchical blocks and 
+    --     forward annotate the netlist to place and route.
+    attribute DONT_TOUCH : string;
+    -- Use DONT_TOUCH instead of keep and keep_hierarchy attributes
+    -- Reference: Vivado Design Suite User Guide: Synthesis, UG901 (v2021.2)
+    
+    --------------------------------------
+    -- ## Synopsys Design Compiler and Precision RTL
+    -- DONT_TOUCH_NETWORK: If set to TRUE, excludes the network connected to the input port from optimization
+    -- attribute DONT_TOUCH_NETWORK : boolean;
+    -- DONT_TOUCH: prevent optimization on instance. Note that the type is boolean!
+    -- attribute DONT_TOUCH : boolean;
+
+    --------------------------------------
+    -- ## Intel Quartus
+    -- attribute preserve : string;
+    -- attribute keep: boolean;
+
+    --------------------------------------
+    -- ## Synplify
+    -- attribute syn_keep : boolean;
+    -- attribute preserve_signal : boolean;
+
    
 end design_pkg;
 

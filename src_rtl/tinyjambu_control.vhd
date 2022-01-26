@@ -48,7 +48,6 @@ entity tinyjambu_control is
         bdi_valid       : in  std_logic;
         bdi             : in  bdio_array;
         bdi_ready       : out std_logic;
-        bdi_pad_loc     : in  std_logic_vector(CCWdiv8 - 1 downto 0);
         bdi_valid_bytes : in  std_logic_vector(CCWdiv8 - 1 downto 0);
         bdi_size        : in  std_logic_vector(3 - 1 downto 0);
         bdi_eoi         : in  std_logic;
@@ -60,13 +59,16 @@ entity tinyjambu_control is
         bdo_valid       : out std_logic;
         bdo_valid_bytes : out std_logic_vector(CCWdiv8 - 1 downto 0);
         end_of_block    : out std_logic;
-        hash_in         : in  std_logic;
-        msg_auth_ready  : in  std_logic;
-        msg_auth_valid  : out std_logic;
-        msg_auth        : out std_logic;
         --! rdi data form outside world to be used as PRNG seed
         rdi_valid       : in  std_logic;
-        rdi_ready       : out std_logic
+        rdi_ready       : out std_logic;
+        -- tag verifier
+        cc_tag_last     : out std_logic;
+        cc_tag_valid    : out std_logic;
+        cc_tag_ready    : in  std_logic;
+        tv_rdi_valid    : out std_logic;
+        tv_rdi_ready    : in  std_logic;
+        tv_done         : in  std_logic
     );
 end entity tinyjambu_control;
 
@@ -105,7 +107,6 @@ architecture behavioral of tinyjambu_control is
     signal npub      : unsigned(1 downto 0);
     signal next_npub : unsigned(1 downto 0);
 
-    signal auth_failed, auth_failed_next : std_logic;
     signal wrd_cnt, next_wrd_cnt         : unsigned(8 - 1 downto 0);
 
 begin
@@ -128,7 +129,6 @@ begin
                 npub        <= next_npub;
                 key_count   <= next_key_count;
                 cycles      <= next_cycles;
-                auth_failed <= auth_failed_next;
                 wrd_cnt     <= next_wrd_cnt;
             end if;
         end if;
@@ -149,8 +149,9 @@ begin
         d_load          <= '0';
         partial         <= '0';
         bdo_sel         <= '0';
-        msg_auth_valid  <= '0';
-        msg_auth        <= '0';
+        tv_rdi_valid <= '0';
+        cc_tag_valid <= '0';
+        cc_tag_last <= '0';
         bdo_type        <= (others => '0');
         bdo_valid_bytes <= (others => '0');
         s_sel           <= (others => '1');
@@ -162,7 +163,6 @@ begin
         next_cycles      <= cycles;
         next_state       <= state;
         next_wrd_cnt     <= wrd_cnt;
-        auth_failed_next <= auth_failed;
         --
         rdi_ready        <= '0';
 
@@ -181,7 +181,6 @@ begin
                 next_key_count   <= (others => '0');
                 next_cycles      <= (others => '0');
                 next_wrd_cnt     <= (others => '0');
-                auth_failed_next <= '0';
             when LOAD_KEY =>
                 key_ready <= '1';
                 if (key_valid = '1') then
@@ -324,6 +323,9 @@ begin
                 nlfsr_load  <= '1';
                 next_cycles <= (others => '0');
                 next_state  <= TAG_B;
+                -- prep TAG verification
+                tv_rdi_valid <= rdi_valid;
+                rdi_ready <= tv_rdi_ready;
             when TAG_B =>
                 rdi_ready <= '1';
                 if rdi_valid = '1' then
@@ -338,16 +340,13 @@ begin
                 bdo_valid_bytes <= (others => '1');
                 bdo_sel         <= '1';
                 if (decrypt_in = '1') then
-                    bdi_ready <= '1';
-                    if bdi_valid = '1' then
+                    tv_rdi_valid <= rdi_valid;
+                    rdi_ready <= tv_rdi_ready;
+                    --
+                    bdi_ready <= cc_tag_ready;
+                    cc_tag_valid <= '1';
+                    if bdi_valid and bdi_ready then
                         next_state <= TAG_D;
-                        -- FIXME for debug only
-                        if (xor_slv_array(bdo) /= xor_slv_array(bdi)) then
-                            -- if rising_edge(clk) then
-                            --     report "bdo=" & to_hstring(xor_slv_array(bdo)) & " /= bdi=" & to_hstring(xor_slv_array(bdi));
-                            -- end if;
-                            auth_failed_next <= '1';
-                        end if;
                     end if;
                 else
                     bdo_valid <= '1';
@@ -377,12 +376,13 @@ begin
                 end_of_block    <= '1';
 
                 if (decrypt_in = '1') then
-                    bdi_ready <= '1';
-                    if (bdi_valid = '1') then
-                        -- FIXME just for debuging
-                        if (xor_slv_array(bdo) /= xor_slv_array(bdi)) then
-                            auth_failed_next <= '1';
-                        end if;
+                    tv_rdi_valid <= rdi_valid;
+                    rdi_ready <= tv_rdi_ready;
+                    --
+                    bdi_ready <= cc_tag_ready;
+                    cc_tag_valid <= '1';
+                    cc_tag_last <= '1';
+                    if bdi_valid and bdi_ready then
                         next_state <= SEND_AUTH;
                     end if;
                 else
@@ -393,9 +393,7 @@ begin
                 end if;
 
             when SEND_AUTH =>
-                msg_auth_valid <= '1';
-                msg_auth       <= '1';  --not auth_failed;
-                if (msg_auth_ready = '1') then
+                if tv_done then
                     next_state <= IDLE;
                 end if;
         end case;

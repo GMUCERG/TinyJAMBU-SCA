@@ -39,7 +39,7 @@ entity LWC_TB IS
         G_FNAME_PDI        : string  := "../KAT/v1/pdi.txt"; --! Path to the input file containing cryptotvgen PDI testvector data
         G_FNAME_SDI        : string  := "../KAT/v1/sdi.txt"; --! Path to the input file containing cryptotvgen SDI testvector data
         G_FNAME_RDI        : string  := "../KAT/v1/rdi.txt"; --! Path to the input file containing random data
-        G_PRNG_RDI         : boolean := TRUE; -- use testbench PRNG to generate RDI input instead of the file `G_FNAME_RDI`
+        G_PRNG_RDI         : boolean := FALSE; -- use testbench PRNG to generate RDI input instead of the file `G_FNAME_RDI`
         G_FNAME_DO         : string  := "../KAT/v1/do.txt"; --! Path to the input file containing cryptotvgen DO testvector data
         G_FNAME_LOG        : string  := "log.txt"; --! Path to the generated log file
         G_FNAME_TIMING     : string  := "timing.txt"; --! Path to the generated timing measurements (when G_TEST_MODE=4)
@@ -301,7 +301,8 @@ begin
             do_data   => do_data,
             do_last   => do_last,
             do_valid  => do_valid,
-            do_ready  => do_ready_delayed, rdi_data => rdi_data_delayed,
+            do_ready  => do_ready_delayed,
+            rdi_data  => rdi_data_delayed,
             rdi_valid => rdi_valid_delayed,
             rdi_ready => rdi_ready
         );
@@ -326,18 +327,19 @@ begin
             report LF & "RW=" & integer'image(RW);
             wait until reset_done and rising_edge(clk);
             if G_PRNG_RDI then
-                loop
+                while not stop_clock loop
                     for i in 0 to get_stalls(G_RDI_STALLS) - 1 loop
                         rdi_valid <= '0';
                         wait until rising_edge(clk);
                     end loop;
-                    rdi_data  <= random(RW);
-                    rdi_valid <= '1';
+                    rdi_data         <= random(RW);
+                    rdi_valid        <= '1';
                     wait until rising_edge(clk) and rdi_ready = '1' and rdi_valid_delayed = '1';
+                    num_rand_vectors <= num_rand_vectors + 1;
                 end loop;
             else
                 file_open(rdi_file, G_FNAME_RDI, READ_MODE);
-                loop
+                while not stop_clock loop
                     loop
                         if endfile(rdi_file) then
                             assert num_rand_vectors > 0 report "RDI file is empty!" severity failure;

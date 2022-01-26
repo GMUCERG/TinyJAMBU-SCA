@@ -23,7 +23,7 @@ entity dom_mul is
         clk : in std_logic;
         x   : in share_array;
         y   : in share_array;
-        z   : in std_logic_vector(SHARE_WIDTH*SHARE_NUM*(SHARE_NUM-1)/2 -1 downto 0);
+        z   : in std_logic_vector(SHARE_WIDTH*NUM_SHARES*(NUM_SHARES-1)/2 -1 downto 0);
         q   : out share_array 
     );
         
@@ -51,14 +51,14 @@ architecture behav of dom_mul is
 begin
     --Map z to rnd_array
     map_z:
-    for i in 0 to (SHARE_NUM*(SHARE_NUM-1)/2-1) generate
+    for i in 0 to (NUM_SHARES*(NUM_SHARES-1)/2-1) generate
         z_arr(i) <= z((i+1) * SHARE_WIDTH -1 downto  i*SHARE_WIDTH);
     end generate map_z;
     -- Calculation =======================
     gen_terms_0: 
-    for i in 0 to SHARE_NUM-1 generate
+    for i in 0 to NUM_SHARES-1 generate
         gen_terms_1:
-        for j in 0 to SHARE_NUM-1 generate
+        for j in 0 to NUM_SHARES-1 generate
             calc_res(i, j) <= x(i) and y(j);
         end generate gen_terms_1;    
     end generate gen_terms_0;
@@ -66,15 +66,15 @@ begin
     -- Resharing===========================
     -- add randomenss
     gen_add_rnd_0: --j>i
-    for i in 0 to SHARE_NUM-1 generate
+    for i in 0 to NUM_SHARES-1 generate
         gen_add_rnd_1:
-        for j in i+1 to SHARE_NUM-1 generate
+        for j in i+1 to NUM_SHARES-1 generate
             t_reshared(i,j) <= calc_res(i,j) xor z_arr(i+j*(j-1)/2);
         end generate gen_add_rnd_1;
     end generate gen_add_rnd_0;
     
     gen_add_rnd_2: --i>j
-    for i in 0 to SHARE_NUM-1 generate
+    for i in 0 to NUM_SHARES-1 generate
         gen_add_rnd_3:
         for j in 0 to i-1 generate
             t_reshared(i,j) <= calc_res(i,j) xor z_arr(j+i*(i-1)/2);
@@ -82,7 +82,7 @@ begin
     end generate gen_add_rnd_2;
     
     gen_pass_4: --i=j
-    for i in 0 to SHARE_NUM-1 generate
+    for i in 0 to NUM_SHARES-1 generate
         t_reshared(i,i) <= calc_res(i,i);
     end generate gen_pass_4;
     
@@ -93,17 +93,17 @@ begin
 
     -- Integration ========================
     gen_integ_0:
-    for i in 0 to SHARE_NUM-1 generate
+    for i in 0 to NUM_SHARES-1 generate
         integ_res(i, 0) <= t_reshared_regd(i,0);
         gen_integ_1:
-        for j in 1 to SHARE_NUM-1 generate
+        for j in 1 to NUM_SHARES-1 generate
             integ_res(i,j) <= t_reshared_regd(i,j) xor integ_res(i,j-1);
         end generate gen_integ_1;
     end generate gen_integ_0;
     
     gen_q:
-    for i in 0 to SHARE_NUM-1 generate
-        q(i) <= integ_res(i, SHARE_NUM-1);
+    for i in 0 to NUM_SHARES-1 generate
+        q(i) <= integ_res(i, NUM_SHARES-1);
     end generate gen_q;
 
 end behav;

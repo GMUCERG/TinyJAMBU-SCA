@@ -7,11 +7,9 @@ version = "0.2.0"
 
 [rtl]
 sources = [
-    ## LWC interface configuration:
-    "src_rtl/NIST_LWAPI_pkg.vhd",
-    ## CryptoCore interface configuration:
     "src_rtl/design_pkg.vhd",
-    ## design sources and LWC package
+    "src_rtl/LWC_config.vhd",
+    "src_rtl/LWC/NIST_LWAPI_pkg.vhd",
     "src_rtl/LWC/LWC_pkg.vhd",
     "src_rtl/tinyjambu_dp_ops.vhd",
     "src_rtl/reg_n.vhd",

@@ -46,14 +46,14 @@ entity tinyjambu_control is
         key_update      : in  std_logic;
         key_ready       : out std_logic;
         bdi_valid       : in  std_logic;
-        bdi             : in  bdio_array;
+        bdi             : in  T_BDIO_ARRAY;
         bdi_ready       : out std_logic;
         bdi_valid_bytes : in  std_logic_vector(CCWdiv8 - 1 downto 0);
         bdi_size        : in  std_logic_vector(3 - 1 downto 0);
         bdi_eoi         : in  std_logic;
         bdi_eot         : in  std_logic;
         bdi_type        : in  std_logic_vector(3 downto 0);
-        bdo             : in  bdio_array;
+        bdo             : in  T_BDIO_ARRAY;
         bdo_type        : out std_logic_vector(3 downto 0);
         bdo_ready       : in  std_logic;
         bdo_valid       : out std_logic;

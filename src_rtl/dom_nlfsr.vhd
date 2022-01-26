@@ -78,7 +78,7 @@ begin
             and_out => and_out(0)
         );
 
-    reg_feed_gen : for i in 1 to SHARE_NUM - 1 generate
+    reg_feed_gen : for i in 1 to NUM_SHARES - 1 generate
         reg_feed_i : entity work.dom_nlfsr_reg_feed
             generic map(
                 CONST_ADD => false

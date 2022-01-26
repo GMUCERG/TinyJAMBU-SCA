@@ -19,7 +19,6 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 use ieee.numeric_std.all;
 
-use work.NIST_LWAPI_pkg.all;
 
 package design_pkg is
 
@@ -27,7 +26,7 @@ package design_pkg is
     constant CONCURRENT  : positive := 32; --! Valid settings:  2, 4, 8, 16, 32
     constant SHARE_WIDTH : positive := CONCURRENT;
     constant WIDTH       : positive := 128; --state size
-    constant SHARE_NUM   : positive := PDI_SHARES;
+    constant NUM_SHARES  : positive := 2; -- number of shares
 
     --! design parameters needed by the PreProcessor, PostProcessor, and LWC; assigned in the package body below!
     --! Internal key width. If SW = 8 or 16, CCSW = SW. If SW=32, CCSW = 8, 16, or 32.
@@ -36,24 +35,22 @@ package design_pkg is
 
     constant CCW     : integer := 32;
     constant CCSW    : integer := CCW;
-    constant CCRW    : integer := SHARE_WIDTH * SHARE_NUM * (SHARE_NUM + 1) / 2;
+    constant CCRW    : integer := SHARE_WIDTH * NUM_SHARES * (NUM_SHARES + 1) / 2;
     constant CCWdiv8 : integer := CCW / 8;
 
     constant TAG_SIZE        : integer; --! Tag size
     constant HASH_VALUE_SIZE : integer; --! Hash value size
 
-    type share_array is array (0 to SHARE_NUM - 1) of std_logic_vector(SHARE_WIDTH - 1 downto 0);
-    type rnd_array is array (0 to SHARE_NUM * (SHARE_NUM - 1) / 2 - 1) of std_logic_vector(SHARE_WIDTH - 1 downto 0);
-    type term_array is array (0 to SHARE_NUM - 1, 0 to SHARE_NUM - 1) of std_logic_vector(SHARE_WIDTH - 1 downto 0);
-    type data_array is array (0 to SHARE_NUM - 1) of std_logic_vector(WIDTH - 1 downto 0);
+    type share_array is array (0 to NUM_SHARES - 1) of std_logic_vector(SHARE_WIDTH - 1 downto 0);
+    type rnd_array is array (0 to NUM_SHARES * (NUM_SHARES - 1) / 2 - 1) of std_logic_vector(SHARE_WIDTH - 1 downto 0);
+    type term_array is array (0 to NUM_SHARES - 1, 0 to NUM_SHARES - 1) of std_logic_vector(SHARE_WIDTH - 1 downto 0);
+    type data_array is array (0 to NUM_SHARES - 1) of std_logic_vector(WIDTH - 1 downto 0);
 
     type bit_array_t is array (natural range <>) of std_logic;
     type slv_array_t is array (natural range <>) of std_logic_vector;
 
-    subtype pdio_array is slv_array_t(0 to PDI_SHARES - 1)(W - 1 downto 0);
-    subtype sdi_array is slv_array_t(0 to SDI_SHARES - 1)(SW - 1 downto 0);
-    subtype bdio_array is slv_array_t(0 to PDI_SHARES - 1)(CCW - 1 downto 0);
-    subtype key_array is slv_array_t(0 to SDI_SHARES - 1)(CCSW - 1 downto 0);
+    subtype T_BDIO_ARRAY is slv_array_t(0 to NUM_SHARES - 1)(CCW - 1 downto 0);
+    subtype T_KEY_ARRAY is slv_array_t(0 to NUM_SHARES - 1)(CCSW - 1 downto 0);
 
     --! chop a std_logic_vector into `n` equal-length pieces as a slv_array_t
     --! requires length of a to be a multiple of n

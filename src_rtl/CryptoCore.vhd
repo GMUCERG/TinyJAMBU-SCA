@@ -68,15 +68,15 @@ architecture structural of CryptoCore_SCA is
     attribute keep_hierarchy : string;
     attribute keep_hierarchy of structural : architecture is "true";
 
-    signal bdi_array, bdo_array : bdio_array;
-    signal key_array            : sdi_array;
+    signal bdi_array, bdo_array : T_BDIO_ARRAY;
+    signal key_array            : T_KEY_ARRAY;
 
     signal bdo_sel, nlfsr_load, nlfsr_en, nlfsr_reset, ctrl_decrypt : std_logic;
     signal key_load, partial                                        : std_logic;
     signal fbits_sel, s_sel, key_index, partial_bytes               : std_logic_vector(1 downto 0);
     -- tag verification
     signal cc_tag_last, cc_tag_valid, cc_tag_ready                  : std_logic;
-    signal tv_bdi_ready, tv_rdi_valid, tv_rdi_ready                 : std_logic;
+    signal tv_rdi_valid, tv_rdi_ready                               : std_logic;
 
 begin
     bdi_array <= chop_be(bdi, PDI_SHARES);

@@ -1,6 +1,6 @@
 --===============================================================================================--
 --! @file       tag_verif.vhd
---! @brief      Secure tag verification
+--! @brief      Secure TAG verification
 --! @author     Kamyar Mohajerani
 --! @copyright  Copyright (c) 2022 Cryptographic Engineering Research Group
 --!             ECE Department, George Mason University Fairfax, VA, U.S.A.
@@ -16,7 +16,6 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 use work.NIST_LWAPI_pkg.all;
-use work.LWC_pkg.all;
 use work.design_pkg.all;
 
 entity tag_verif is
@@ -141,7 +140,7 @@ begin
       case state is
          when S_INIT =>
             null;
-            
+
          when S_INPUT =>
             -- wait until both bdi and cc_tag are valid
             bdi_ready    <= cc_tag_valid and type_ok;

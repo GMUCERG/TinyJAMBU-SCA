@@ -34,14 +34,14 @@ entity tinyjambu_datapath is
         nlfsr_en        : in  std_logic;
         nlfsr_reset     : in  std_logic;
         decrypt         : in  std_logic;
-        bdi             : in  bdio_array;
-        key             : in  key_array;
+        bdi             : in  T_BDIO_ARRAY;
+        key             : in  T_KEY_ARRAY;
         key_load        : in  std_logic;
         key_index       : in  std_logic_vector(1 downto 0);
         fbits_sel       : in  std_logic_vector(1 downto 0);
         s_sel           : in  std_logic_vector(1 downto 0);
         bdo_sel         : in  std_logic;
-        bdo             : out bdio_array;
+        bdo             : out T_BDIO_ARRAY;
         rnd             : in  std_logic_vector(RW - 1 downto 0)
     );
 end entity tinyjambu_datapath;
@@ -60,7 +60,7 @@ architecture behav of tinyjambu_datapath is
 
 begin
 
-    gen_ops : for i in 0 to SHARE_NUM - 1 generate
+    gen_ops : for i in 0 to NUM_SHARES - 1 generate
         dp_ops : entity work.tinyjambu_dp_ops(behav)
             generic map(
                 CONST_ADD => i = 0

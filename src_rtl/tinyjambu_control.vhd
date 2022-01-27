@@ -118,12 +118,6 @@ begin
         if rising_edge(clk) then
             if (reset = '1') then
                 state       <= IDLE;
-                ---- initialized in IDLE so no need to reset:
-                -- npub        <= (others => '0');
-                -- key_count   <= (others => '0');
-                -- cycles      <= (others => '0');
-                -- auth_failed <= '0';
-                -- wrd_cnt     <= (others => '0');
             else
                 state       <= next_state;
                 npub        <= next_npub;

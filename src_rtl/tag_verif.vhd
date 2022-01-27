@@ -66,6 +66,7 @@ begin
 
    -- not really needed
    type_ok <= '1' when bdi_type = HDR_TAG else '0';
+   msg_auth <= not failed;
 
    -- We always (combinationally) mix corresponding shares of BDI and tag (BDO) outputs
    -- Different shares are not mixed though, so should be perfectly safe.
@@ -153,7 +154,6 @@ begin
          when S_SEND_AUTH =>
             msg_auth_valid <= '1';
             -- mixing of shares in only on the content of comp
-            msg_auth <= not failed;
 
       end case;
    end process;

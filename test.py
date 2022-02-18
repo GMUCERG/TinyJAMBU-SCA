@@ -37,7 +37,7 @@ def gen_tv():
 "./gen_shared.py --pdi-file ./kats_for_verification/pdi.txt --sdi-file ./kats_for_verification/sdi.txt --pdi-width 32 --pdi-shares 2 --rdi-width 96"
 
 def test_dut(args=None):
-    gen_tv()
+    # gen_tv()
     xeda_runner = DefaultRunner()
     xeda_runner.run_flow(
         GhdlSim, design

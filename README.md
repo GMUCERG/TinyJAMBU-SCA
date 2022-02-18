@@ -1,4 +1,4 @@
-![Main Test](https://github.com/GMUCERG/TinyJAMBU-SCA/workflows/Main%20Test/badge.svg?branch=master)
+[![Main Test](https://github.com/GMUCERG/TinyJAMBU-SCA/workflows/Main%20Test/badge.svg?branch=master)](https://github.com/GMUCERG/TinyJAMBU-SCA/actions)
 # Masked implementation of TinyJAMBU
 This is a side-channel protected hardware implementation of [TinyJAMBU AEAD](https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/tinyjambu-spec-final.pdf), developed by Sammy Lin and Abubakr Abdulgadir.
 

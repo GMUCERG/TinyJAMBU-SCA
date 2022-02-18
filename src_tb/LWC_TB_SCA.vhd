@@ -23,7 +23,6 @@ use ieee.numeric_std.all;
 use std.textio.all;
 
 use work.NIST_LWAPI_pkg.all;
-use work.LWC_pkg.all;
 
 entity LWC_TB IS
     generic(

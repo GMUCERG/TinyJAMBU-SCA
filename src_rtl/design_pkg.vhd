@@ -68,9 +68,6 @@ package design_pkg is
 
     -- Little Endian
     function concat_le(a : slv_array_t) return std_logic_vector;
-    --! first TO_01 and then TO_INTEGER
-    function TO_INT01(S : UNSIGNED) return INTEGER;
-    function TO_INT01(S : STD_LOGIC_VECTOR) return INTEGER;
 
     function xor_slv_array(a : slv_array_t) return std_logic_vector;
 
@@ -172,17 +169,5 @@ package body design_pkg is
         end loop;
         return ret;
     end function;
-
-    function TO_INT01(S : UNSIGNED) return INTEGER is
-    begin
-        return to_integer(to_01(S));
-
-    end function TO_INT01;
-
-    function TO_INT01(S : STD_LOGIC_VECTOR) return INTEGER is
-    begin
-        return TO_INT01(unsigned(S));
-
-    end function TO_INT01;
 
 end package body design_pkg;

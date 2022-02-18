@@ -20,7 +20,6 @@ use ieee.numeric_std.all;
 
 use work.design_pkg.all;
 use work.NIST_LWAPI_pkg.all;
-use work.LWC_pkg.all;
 
 entity tinyjambu_control is
     port(

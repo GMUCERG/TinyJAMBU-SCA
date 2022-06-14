@@ -157,7 +157,7 @@ begin
         next_state       <= state;
         next_wrd_cnt     <= wrd_cnt;
         --
-        rdi_ready        <= '0';
+        rdi_ready        <= '1'; --DEBUG
 
         case state is
 
@@ -338,7 +338,7 @@ begin
                     --
                     bdi_ready <= cc_tag_ready;
                     cc_tag_valid <= '1';
-                    if bdi_valid and bdi_ready then
+                    if bdi_valid = '1' and bdi_ready = '1' then
                         next_state <= TAG_D;
                     end if;
                 else
@@ -375,7 +375,7 @@ begin
                     bdi_ready <= cc_tag_ready;
                     cc_tag_valid <= '1';
                     cc_tag_last <= '1';
-                    if bdi_valid and bdi_ready then
+                    if bdi_valid = '1' and bdi_ready = '1' then
                         next_state <= SEND_AUTH;
                     end if;
                 else
@@ -386,7 +386,7 @@ begin
                 end if;
 
             when SEND_AUTH =>
-                if tv_done then
+                if tv_done = '1' then
                     next_state <= IDLE;
                 end if;
         end case;

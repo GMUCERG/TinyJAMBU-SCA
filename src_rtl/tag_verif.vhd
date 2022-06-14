@@ -87,11 +87,11 @@ begin
          if rst = '1' then
             state <= S_INIT;
          else
-            if pipeline_go then
-               if valids(0) then
+            if pipeline_go = '1' then
+               if valids(0) = '1' then
                   mixed_reg <= shared_reg;
                end if;
-               if valids(1) then
+               if valids(1) = '1' then
                   failed <= failed_so_far;
                end if;
             end if;

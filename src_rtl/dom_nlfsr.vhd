@@ -55,6 +55,7 @@ begin
     dom_and : entity work.dom_mul_dep(behav)
         port map(
             clk => clk,
+            en  => enable,
             x   => and_x,
             y   => and_y,
             rnd => rnd,

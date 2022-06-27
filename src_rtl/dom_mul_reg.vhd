@@ -32,8 +32,7 @@ end dom_mul_reg;
 
 architecture behav of dom_mul_reg is
 
-    attribute keep_hierarchy : string;
-    attribute keep_hierarchy of behav: architecture is "true";
+    attribute DONT_TOUCH of behav: architecture is "true";
 
 begin
     reg: process(clk)

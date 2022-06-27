@@ -30,8 +30,8 @@ end reg_n;
 
 architecture behav of reg_n is
 
-    attribute keep_hierarchy : string;
-    attribute keep_hierarchy of behav: architecture is "true";  
+    attribute DONT_TOUCH : string;
+    attribute DONT_TOUCH of behav: architecture is "true";  
 
 begin
     reg: process(clk)

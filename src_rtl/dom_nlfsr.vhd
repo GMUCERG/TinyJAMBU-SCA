@@ -30,7 +30,8 @@ entity dom_nlfsr is
         load   : in  std_logic;
         din    : in  data_array;
         dout   : out data_array;
-        rnd    : in  std_logic_vector(CCRW - 1 downto 0)
+        rnd    : in  std_logic_vector(CCRW - 1 downto 0);
+        cycle_odd : in std_logic
     );
 
     attribute DONT_TOUCH : string;
@@ -38,24 +39,23 @@ entity dom_nlfsr is
 end entity dom_nlfsr;
 
 architecture behav of dom_nlfsr is
-    attribute keep_hierarchy : string;
-    attribute keep_hierarchy of behav : architecture is "true";
+    attribute DONT_TOUCH of behav : architecture is "true";
     --============================================
     signal and_x             : share_array;
     signal and_y             : share_array;
     signal and_out           : share_array;
     --============================================
-    attribute keep           : string;
-    attribute keep of and_x : signal is "true";
-    attribute keep of and_y : signal is "true";
-    attribute keep of and_out : signal is "true";
+
+    attribute DONT_TOUCH of and_x : signal is "true";
+    attribute DONT_TOUCH of and_y : signal is "true";
+    attribute DONT_TOUCH of and_out : signal is "true";
 
 begin
 
     dom_and : entity work.dom_mul_dep(behav)
         port map(
             clk => clk,
-            en  => enable,
+            en  => (enable and not cycle_odd),
             x   => and_x,
             y   => and_y,
             rnd => rnd,

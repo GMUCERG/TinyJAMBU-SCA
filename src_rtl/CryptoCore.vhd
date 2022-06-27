@@ -77,6 +77,7 @@ architecture structural of CryptoCore_SCA is
     -- tag verification
     signal cc_tag_last, cc_tag_valid, cc_tag_ready                  : std_logic;
     signal tv_rdi_valid, tv_rdi_ready                               : std_logic;
+    signal cycle_odd : std_logic;
 
 begin
     bdi_array <= chop_be(bdi, PDI_SHARES);
@@ -102,7 +103,8 @@ begin
             key             => key_array,
             bdo_sel         => bdo_sel,
             bdo             => bdo_array,
-            rnd             => rdi
+            rnd             => rdi,
+            cycle_odd       => cycle_odd
         );
 
     control : entity work.tinyjambu_control
@@ -126,6 +128,7 @@ begin
             bdi             => bdi_array,
             partial         => partial,
             partial_bytes   => partial_bytes,
+            cycle_odd       => cycle_odd,
             bdi_valid       => bdi_valid,
             bdi_ready       => bdi_ready,
             bdi_size        => bdi_size,

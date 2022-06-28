@@ -48,8 +48,8 @@ end entity tinyjambu_dp_ops;
 
 architecture behav of tinyjambu_dp_ops is
 
-    attribute keep_hierarchy : string;
-    attribute keep_hierarchy of behav : architecture is "true";
+    attribute DONT_TOUCH : string;
+    attribute DONT_TOUCH of behav : architecture is "true";
 
     constant REG_SIZE           : integer := 128;
     signal fbits_mux_out        : std_logic_vector(2 downto 0);

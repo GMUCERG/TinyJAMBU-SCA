@@ -21,6 +21,7 @@ use ieee.numeric_std.ALL;
 entity dom_mul_dep is
     port ( 
         clk : in std_logic;
+        en  : in std_logic;
         x   : in share_array;
         y   : in share_array;
         rnd : in std_logic_vector(SHARE_WIDTH*NUM_SHARES*(NUM_SHARES-1)/2 + (SHARE_WIDTH*NUM_SHARES) -1
@@ -33,8 +34,7 @@ entity dom_mul_dep is
 end dom_mul_dep;
 
 architecture behav of dom_mul_dep is
-    attribute keep_hierarchy : string;
-	attribute keep_hierarchy of behav : architecture is "true";
+	attribute DONT_TOUCH of behav : architecture is "true";
     
     signal z : share_array;
     signal z_vect : std_logic_vector(NUM_SHARES*SHARE_WIDTH-1 downto 0);
@@ -43,6 +43,7 @@ architecture behav of dom_mul_dep is
     
     signal y_xor_z : share_array;
     signal y_xor_z_regd : share_array;
+    signal x_regd : share_array;
     
     signal sum : share_array;
     signal b : std_logic_vector(SHARE_WIDTH-1 downto 0);
@@ -50,16 +51,15 @@ architecture behav of dom_mul_dep is
     signal x_mul_b : share_array;
     signal dom_mul_q : share_array;
     --
-    attribute keep : string;
-    attribute keep of z : signal is "true";  
-	attribute keep of z_vect : signal is "true";  
-	attribute keep of z_indep : signal is "true"; 
-	attribute keep of y_xor_z : signal is "true"; 
-	attribute keep of y_xor_z_regd : signal is "true"; 
-	attribute keep of sum : signal is "true"; 
-	attribute keep of b : signal is "true"; 
-	attribute keep of x_mul_b : signal is "true"; 
-	attribute keep of dom_mul_q : signal is "true"; 
+    attribute DONT_TOUCH of z : signal is "true";  
+	attribute DONT_TOUCH of z_vect : signal is "true";  
+	attribute DONT_TOUCH of z_indep : signal is "true"; 
+	attribute DONT_TOUCH of y_xor_z : signal is "true"; 
+	attribute DONT_TOUCH of y_xor_z_regd : signal is "true"; 
+	attribute DONT_TOUCH of sum : signal is "true"; 
+	attribute DONT_TOUCH of b : signal is "true"; 
+	attribute DONT_TOUCH of x_mul_b : signal is "true"; 
+	attribute DONT_TOUCH of dom_mul_q : signal is "true"; 
     
 begin
     --rand mapping
@@ -82,7 +82,15 @@ begin
     for i in 0 to NUM_SHARES-1 generate
         reg: entity work.reg_n(behav)
             generic map(N => SHARE_WIDTH)
-            port map(clk=> clk, d=>y_xor_z(i), q=>y_xor_z_regd(i));
+            port map(clk=> clk, en=>en, d=>y_xor_z(i), q=>y_xor_z_regd(i));
+    end generate;
+    
+    -- x regs
+    x_regs:
+    for i in 0 to NUM_SHARES-1 generate
+        reg: entity work.reg_n(behav)
+            generic map(N => SHARE_WIDTH)
+            port map(clk=> clk, en=>en, d=>x(i), q=>x_regd(i));
     end generate;
     
     -- sum up all y+z shares
@@ -97,12 +105,12 @@ begin
     -- regular multipliers
     gen_muls:
     for i in 0 to NUM_SHARES-1 generate
-        x_mul_b(i) <= x(i) and b;
+        x_mul_b(i) <= x_regd(i) and b;
     end generate;
     
     --- DOM multiplier
     dom_mul : entity work.dom_mul(behav)
-    port map(clk=>clk, x =>x, y=>z, z=>z_indep, q=> dom_mul_q);
+    port map(clk=>clk, en=>en, x =>x, y=>z, z=>z_indep, q=> dom_mul_q);
     
     gen_out:
     for i in 0 to NUM_SHARES-1 generate

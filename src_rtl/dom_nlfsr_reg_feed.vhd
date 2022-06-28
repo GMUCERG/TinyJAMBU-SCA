@@ -45,8 +45,7 @@ entity dom_nlfsr_reg_feed is
 end entity dom_nlfsr_reg_feed;
 
 architecture behav of dom_nlfsr_reg_feed is
-    attribute keep_hierarchy : string;
-    attribute keep_hierarchy of behav : architecture is "true";
+    attribute DONT_TOUCH of behav : architecture is "true";
 
     signal reg      : std_logic_vector(WIDTH - 1 downto 0);
     signal feedback : std_logic_vector(SHARE_WIDTH - 1 downto 0);
@@ -55,9 +54,8 @@ architecture behav of dom_nlfsr_reg_feed is
     signal cnt      : unsigned(0 downto 0);
     signal en_state : std_logic;
 
-    attribute keep : string;
-    attribute keep of reg : signal is "true";
-    attribute keep of feedback : signal is "true";
+    attribute DONT_TOUCH of reg : signal is "true";
+    attribute DONT_TOUCH of feedback : signal is "true";
 
 begin
 

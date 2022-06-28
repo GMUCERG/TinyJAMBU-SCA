@@ -21,6 +21,7 @@ use ieee.numeric_std.ALL;
 entity dom_mul is
     port ( 
         clk : in std_logic;
+        en  : in std_logic;
         x   : in share_array;
         y   : in share_array;
         z   : in std_logic_vector(SHARE_WIDTH*NUM_SHARES*(NUM_SHARES-1)/2 -1 downto 0);
@@ -32,8 +33,8 @@ entity dom_mul is
 end dom_mul;
 
 architecture behav of dom_mul is
-    attribute keep_hierarchy : string;
-	attribute keep_hierarchy of behav : architecture is "true";
+  
+	attribute DONT_TOUCH of behav : architecture is "true";
 	
     signal calc_res        : term_array;
     signal t_reshared      : term_array;
@@ -41,12 +42,11 @@ architecture behav of dom_mul is
     signal integ_res       : term_array;
     signal z_arr           : rnd_array;
     
-    attribute keep : string;
-	attribute keep of calc_res : signal is "true";  
-	attribute keep of t_reshared : signal is "true";  
-	attribute keep of t_reshared_regd : signal is "true";  
-	attribute keep of integ_res : signal is "true";  
-	attribute keep of z_arr : signal is "true";  
+	attribute DONT_TOUCH of calc_res : signal is "true";  
+	attribute DONT_TOUCH of t_reshared : signal is "true";  
+	attribute DONT_TOUCH of t_reshared_regd : signal is "true";  
+	attribute DONT_TOUCH of integ_res : signal is "true";  
+	attribute DONT_TOUCH of z_arr : signal is "true";  
     
 begin
     --Map z to rnd_array
@@ -88,7 +88,7 @@ begin
     
     -- sync registers -- full pipelining for now
     reg: entity work.dom_mul_reg(behav)
-    port map(clk => clk,  
+    port map(clk => clk, en=> en,  
         d=> t_reshared, q => t_reshared_regd);
 
     -- Integration ========================

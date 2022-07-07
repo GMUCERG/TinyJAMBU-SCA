@@ -42,7 +42,7 @@ entity tinyjambu_datapath is
         s_sel           : in  std_logic_vector(1 downto 0);
         bdo_sel         : in  std_logic;
         bdo             : out T_BDIO_ARRAY;
-        rnd             : in  std_logic_vector(RW - 1 downto 0)
+        rnd             : in  std_logic_vector(CCRW - 1 downto 0)
     );
 end entity tinyjambu_datapath;
 

@@ -7,7 +7,7 @@
 --! @copyright  Copyright (c) 2015, 2020, 2021, 2022 Cryptographic Engineering Research Group
 --!             ECE Department, George Mason University Fairfax, VA, U.S.A.
 --!             All rights Reserved.
---! @version    1.2.1
+--! @version    1.2.2
 --! @license    This project is released under the GNU Public License.
 --!             The license and distribution terms for this file may be
 --!             found in the file LICENSE in this distribution or at
@@ -56,12 +56,22 @@ entity LWC_TB IS
         G_PRERESET_WAIT_NS : natural  := 0; --! Time (in nanoseconds) to wait before reseting UUT. Xilinx GSR takes 100ns, required for post-synth simulation
         G_INPUT_DELAY_NS   : natural  := 0; --! Input delay in nanoseconds
         G_TIMEOUT_CYCLES   : integer  := 0; --! Fail simulation after this many consecutive cycles of data I/O inactivity, 0: disable timeout
-        G_VERBOSE_LEVEL    : integer  := 0 --! Verbosity level
+        G_VERBOSE_LEVEL    : integer  := 0; --! Verbosity level;
+        G_LWC_WRAPPER      : boolean  := TRUE
     );
 end LWC_TB;
 
 architecture TB of LWC_TB is
     --================================================== Constants ==================================================--
+    function GET_RW return positive is
+    begin
+        if RW > 0 and G_LWC_WRAPPER then
+            return 8;
+        end if;
+        return RW;
+    end function;
+
+    constant RW          : positive       := GET_RW;
     constant W_S         : positive       := W * PDI_SHARES;
     constant SW_S        : positive       := SW * SDI_SHARES;
     constant input_delay : TIME           := G_INPUT_DELAY_NS * ns;
@@ -105,10 +115,10 @@ architecture TB of LWC_TB is
     -- Used only for protected implementations:
     --   RDI
     signal rdi_data                : std_logic_vector(RW - 1 downto 0)   := (others => '0');
-    signal rdi_data_delayed        : std_logic_vector(RW - 1 downto 0)   := (others => '0');
+    signal rdi_data_delayed        : std_logic_vector(RW - 1 downto 0)   := (others => '0'); -- @suppress "signal rdi_data_delayed is never read"
     signal rdi_valid               : std_logic                           := '0';
     signal rdi_valid_delayed       : std_logic                           := '0';
-    signal rdi_ready               : std_logic;
+    signal rdi_ready               : std_logic; -- @suppress "signal rdi_ready is never written"
     -- Counters
     signal pdi_operation_count     : integer                             := 0;
     signal cycle_counter           : natural                             := 0;
@@ -230,6 +240,30 @@ architecture TB of LWC_TB is
         end if;
     end function;
 
+    component LWC_SCA
+        port(
+            clk       : in  std_logic;
+            rst       : in  std_logic;
+            --! Public data input
+            pdi_data  : in  std_logic_vector(PDI_SHARES * W - 1 downto 0);
+            pdi_valid : in  std_logic;
+            pdi_ready : out std_logic;
+            --! Secret data input
+            sdi_data  : in  std_logic_vector(SDI_SHARES * SW - 1 downto 0);
+            sdi_valid : in  std_logic;
+            sdi_ready : out std_logic;
+            --! Data out ports
+            do_data   : out std_logic_vector(PDI_SHARES * W - 1 downto 0);
+            do_last   : out std_logic;
+            do_valid  : out std_logic;
+            do_ready  : in  std_logic;
+            --! Random Input
+            rdi_data  : in  std_logic_vector(RW - 1 downto 0);
+            rdi_valid : in  std_logic;
+            rdi_ready : out std_logic
+        );
+    end component;
+
 begin
     --===========================================================================================--
     -- generate clock
@@ -292,6 +326,7 @@ begin
 
     --===========================================================================================--
     -- LWC is instantiated as a component to enable mixed language simulation
+
     uut : LWC_SCA
         port map(
             clk       => clk,
@@ -391,61 +426,62 @@ begin
     --===========================================================================================--
     --====================================== PDI Stimulus =======================================--
     tb_read_pdi : process
-        variable line_data    : LINE;
-        variable word_block   : std_logic_vector(W_S - 1 downto 0) := (others => '0');
-        variable read_ok      : boolean;
-        variable line_head    : string(1 to 6);
-        variable actkey_ins   : boolean;
-        variable hash_ins     : boolean;
-        -- instruction other than actkey or hash was already sent
-        alias word_block_inst : std_logic_vector is word_block(word_block'left downto word_block'left - 3);
+        variable line_data   : LINE;
+        variable word_block  : std_logic_vector(W_S - 1 downto 0) := (others => '0');
+        variable read_ok     : boolean;
+        variable line_head   : string(1 to 6);
+        variable prev_actkey : boolean; -- previous instruction was ACTKEY
+        variable inst_line   : boolean; -- in TIMING_MODE and read line is instruction
     begin
         -- wait for the clock edge after reset is complete
         wait until reset_done;
         wait until rising_edge(clk);
         --
+        prev_actkey := FALSE;
         while not endfile(pdi_file) loop
             readline(pdi_file, line_data);
             read(line_data, line_head, read_ok); --! read line header
             if read_ok and (line_head = INS_HEAD) then
                 pdi_operation_count <= pdi_operation_count + 1;
             end if;
+            inst_line := TIMING_MODE and (line_head = INS_HEAD);
+            if inst_line then           -- line is an instruction
+                if timing_active and not prev_actkey then
+                    if not stop_timing then
+                        pdi_valid <= '0';
+                        -- wait for tb_verify_do process to complete timed operation
+                        wait until rising_edge(clk) and stop_timing;
+                    end if;
+                    -- acknowledge receiving `stop_timing` to tb_verify_do process
+                    timing_active <= FALSE;
+                    -- wait for tb_verify_do process to complete timed operation
+                    wait until rising_edge(clk) and not stop_timing;
+                end if;
+                if not timing_active then -- if wasn't active before or now deactivated
+                    timing_active <= TRUE;
+                    start_cycle   <= cycle_counter;
+                    rdi_count0    <= rdi_counter;
+                end if;
+            end if;
+
             if read_ok and (line_head = INS_HEAD or line_head = HDR_HEAD or line_head = DAT_HEAD) then
                 loop
                     hread(line_data, word_block, read_ok);
                     if not read_ok then
                         exit;
                     end if;
-                    actkey_ins := (line_head = INS_HEAD) and (word_block_inst = INST_ACTKEY);
-                    hash_ins   := (line_head = INS_HEAD) and (word_block_inst = INST_HASH);
+
                     for i in 0 to get_stalls(G_PDI_STALLS) - 1 loop
                         pdi_valid <= '0';
                         wait until rising_edge(clk);
                     end loop;
-                    -- We got an ACT_KEY or HASH instruction, but a previous timed operation is still active
-                    if TIMING_MODE and (actkey_ins or hash_ins) and timing_active then
-                        -- wait for the remainder of the previous timed operation (in DO process) to finish
-                        if not stop_timing then
-                            pdi_valid <= '0';
-                            wait until rising_edge(clk) and stop_timing; -- wait for tb_verify_do process to complete timed operation
-                        end if;
-                        -- and then deactivate
-                        timing_active <= False; -- acknowledge receiving `stop_timing` to tb_verify_do process
-                    end if;
 
                     pdi_valid <= '1';
                     pdi_data  <= word_block;
                     wait until rising_edge(clk) and pdi_ready = '1';
-                    -- start a new timed operation
-                    if TIMING_MODE and (actkey_ins or hash_ins) then
-                        if not timing_active then
-                            start_cycle   <= cycle_counter;
-                            rdi_count0    <= rdi_counter;
-                            timing_active <= True;
-                            -- Must yield to actually update timing_active signal
-                            -- Required as no other `wait` statements might be hit before `timing_active` is evaluated in the next iteration
-                            wait for 0 ns;
-                        end if;
+                    if inst_line then
+                        prev_actkey := word_block(word_block'left downto word_block'left - 3) = INST_ACTKEY;
+                        inst_line   := FALSE; -- make sure done just once per line
                     end if;
                 end loop;
             end if;
@@ -617,6 +653,7 @@ begin
                             if RW > 0 then
                                 write(logMsg, "," & integer'image(rdi_cnt)); -- TODO rdi_counter can overflow (integer is only 32 bits). Use unsigned.
                             end if;
+                            writeline(timing_file, logMsg);
                             if G_VERBOSE_LEVEL > 0 then
                                 if RW > 0 then
                                     report "[Timing] MsgId: " & integer'image(msgid) & ", cycles: " & integer'image(cycles) severity note;
@@ -624,7 +661,6 @@ begin
                                     report "[Timing] MsgId: " & integer'image(msgid) & ", cycles: " & integer'image(cycles) & ", RDI words: " & integer'image(rdi_cnt) severity note;
                                 end if;
                             end if;
-                            writeline(timing_file, logMsg);
                         end if;
                     end if;
                 end loop;               -- end of this line
@@ -695,3 +731,4 @@ begin
     end process;
 
 end architecture;
+

@@ -35,7 +35,7 @@ package design_pkg is
 
     constant CCW     : integer := 32;
     constant CCSW    : integer := CCW;
-    constant CCRW    : integer := SHARE_WIDTH * NUM_SHARES * (NUM_SHARES + 1) / 2;
+    constant CCRW    : integer := SHARE_WIDTH * (NUM_SHARES - 1) * (NUM_SHARES); --SHARE_WIDTH * NUM_SHARES * (NUM_SHARES + 1) / 2;
     constant CCWdiv8 : integer := CCW / 8;
 
     constant TAG_SIZE        : integer; --! Tag size

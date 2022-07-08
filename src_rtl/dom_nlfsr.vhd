@@ -34,25 +34,31 @@ entity dom_nlfsr is
         cycle_odd : in  std_logic
     );
 
-    attribute DONT_TOUCH : string;
-    attribute DONT_TOUCH of dom_nlfsr : entity is "true";
+    -- attribute DONT_TOUCH : string;
+    -- attribute DONT_TOUCH of dom_nlfsr : entity is "true";
 end entity dom_nlfsr;
 
 architecture behav of dom_nlfsr is
-    attribute DONT_TOUCH of behav : architecture is "true";
+    -- attribute DONT_TOUCH of behav : architecture is "true";
     --============================================
     signal and_x   : share_array;
     signal and_y   : share_array;
     signal and_out : share_array;
     --============================================
 
-    attribute DONT_TOUCH of and_x : signal is "true";
-    attribute DONT_TOUCH of and_y : signal is "true";
-    attribute DONT_TOUCH of and_out : signal is "true";
+    -- attribute DONT_TOUCH of and_x : signal is "true";
+    -- attribute DONT_TOUCH of and_y : signal is "true";
+    -- attribute DONT_TOUCH of and_out : signal is "true";
 
 begin
 
     hpc3_and : entity work.hpc3_mul
+        generic map(
+            G_ORDER        => NUM_SHARES - 1,
+            G_W            => SHARE_WIDTH,
+            G_PLUS         => HPC3_PLUS,
+            G_PLUS_OUT_REG => false
+        )
         port map(
             clk => clk,
             en  => (enable and not cycle_odd),

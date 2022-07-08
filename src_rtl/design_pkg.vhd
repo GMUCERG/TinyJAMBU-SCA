@@ -19,6 +19,7 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 use ieee.numeric_std.all;
 
+use work.hpc3_utils_pkg.all;
 
 package design_pkg is
 
@@ -33,10 +34,11 @@ package design_pkg is
     --! Internal data width. If W = 8 or 16, CCW = W. If W=32, CCW = 8, 16, or 32.
     --! derived from the parameters above, assigned in the package body below.
 
-    constant CCW     : integer := 32;
-    constant CCSW    : integer := CCW;
-    constant CCRW    : integer := SHARE_WIDTH * (NUM_SHARES - 1) * (NUM_SHARES); --SHARE_WIDTH * NUM_SHARES * (NUM_SHARES + 1) / 2;
-    constant CCWdiv8 : integer := CCW / 8;
+    constant CCW       : integer := 32;
+    constant CCSW      : integer := CCW;
+    constant HPC3_PLUS : boolean := true; -- use HPC3+ instead of HPC3
+    constant CCRW      : integer := SHARE_WIDTH * (NUM_SHARES - 1) * (NUM_SHARES + to_integer(HPC3_PLUS));
+    constant CCWdiv8   : integer := CCW / 8;
 
     constant TAG_SIZE        : integer; --! Tag size
     constant HASH_VALUE_SIZE : integer; --! Hash value size
@@ -79,7 +81,7 @@ package design_pkg is
     attribute DONT_TOUCH : string;
     -- Use DONT_TOUCH instead of keep and keep_hierarchy attributes
     -- Reference: Vivado Design Suite User Guide: Synthesis, UG901 (v2021.2)
-    
+
     --------------------------------------
     -- ## Synopsys Design Compiler and Precision RTL
     -- DONT_TOUCH_NETWORK: If set to TRUE, excludes the network connected to the input port from optimization
@@ -97,7 +99,6 @@ package design_pkg is
     -- attribute syn_keep : boolean;
     -- attribute preserve_signal : boolean;
 
-   
 end design_pkg;
 
 package body design_pkg is
@@ -135,9 +136,9 @@ package body design_pkg is
     --! concatenates slv_array_t elements into a single std_logic_vector
     -- Big Endian
     function concat_be(a : slv_array_t) return std_logic_vector is
-        constant n    : positive := a'length;
-        constant el : std_logic_vector := a(0);
-        constant el_w : positive := el'length;
+        constant n    : positive         := a'length;
+        constant el   : std_logic_vector := a(0);
+        constant el_w : positive         := el'length;
         variable ret  : std_logic_vector(el_w * n - 1 downto 0);
     begin
         for i in a'range loop
@@ -147,9 +148,9 @@ package body design_pkg is
     end function;
 
     function concat_le(a : slv_array_t) return std_logic_vector is
-        constant n    : positive := a'length;
-        constant el : std_logic_vector := a(0);
-        constant el_w : positive := el'length;
+        constant n    : positive         := a'length;
+        constant el   : std_logic_vector := a(0);
+        constant el_w : positive         := el'length;
         variable ret  : std_logic_vector(el_w * n - 1 downto 0);
     begin
         for i in a'range loop

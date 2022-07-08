@@ -7,6 +7,7 @@ version = "0.2.0"
 
 [rtl]
 sources = [
+    "src_rtl/hpc3_and.vhd",
     "src_rtl/design_pkg.vhd",
     "src_rtl/LWC_config.vhd",
     "src_rtl/LWC/NIST_LWAPI_pkg.vhd",
@@ -15,7 +16,6 @@ sources = [
     # "src_rtl/dom_mul_reg.vhd",
     # "src_rtl/dom_mul.vhd",
     # "src_rtl/dom_mul_dep.vhd",
-    "src_rtl/hpc3_and.vhd",
     "src_rtl/hpc3_mul.vhd",
     "src_rtl/dom_nlfsr_reg_feed.vhd",
     "src_rtl/dom_nlfsr.vhd",

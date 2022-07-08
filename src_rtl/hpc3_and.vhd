@@ -26,15 +26,30 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-package util_pkg is
+package hpc3_utils_pkg is
     --====================================== Types ==============================================--
     type slv_array is array (natural range <>) of std_logic_vector;
+
+    function to_integer(b : boolean) return natural;
 end package;
+
+package body hpc3_utils_pkg is
+
+    function to_integer(b : boolean) return natural is
+    begin
+        if b then
+            return 1;
+        else
+            return 0;
+        end if;
+    end function to_integer;
+
+end package body;
 
 library ieee;
 use ieee.std_logic_1164.all;
 
-use work.util_pkg.all;
+use work.hpc3_utils_pkg.all;
 
 entity hpc3_and is
     generic(
@@ -74,6 +89,8 @@ architecture RTL of hpc3_and is
     signal r1, r2, u1, u2 : slv_array(0 to G_ORDER)(0 to G_ORDER) := (others => (others => '-'));
 
     --================================= Synthesis Attributes ====================================--
+    attribute DONT_TOUCH of RTL : architecture is "true";
+
     -- NOTE: no keep attributes needed for: c, r1, r2, u1, u2
     attribute DONT_TOUCH of x_reg, xy_reg, u1_reg, u2_reg : signal is "true";
 
@@ -130,7 +147,8 @@ use ieee.std_logic_1164.all;
 entity hpc3_plus_and is
     generic(
         -- protection order (number of shares = G_ORDER + 1)
-        G_ORDER : natural := 1
+        G_ORDER   : natural := 1;
+        G_OUT_REG : boolean := TRUE     -- register output (required as a standalone gadget)
     );
     port(
         clk : in  std_logic;
@@ -155,10 +173,11 @@ entity hpc3_plus_and is
 end entity;
 
 architecture RTL of hpc3_plus_and is
-    signal w, m, m_reg, z_reg : std_logic_vector(0 to G_ORDER);
+    signal w, m, m_reg : std_logic_vector(0 to G_ORDER);
 
     --================================= Synthesis Attributes ====================================--
-    attribute DONT_TOUCH of w, m : signal is "true";
+    attribute DONT_TOUCH of RTL : architecture is "true";
+    attribute DONT_TOUCH of w, m, m_reg : signal is "true";
 begin
     INST_HPC3 : entity work.hpc3_and
         generic map(G_ORDER => G_ORDER)
@@ -173,15 +192,28 @@ begin
     m(0 to G_ORDER - 1) <= r(G_ORDER * (G_ORDER + 1) to G_ORDER * (G_ORDER + 2) - 1);
     m(G_ORDER)          <= xor m(0 to G_ORDER - 1);
 
-    process(clk) is
+    GEN_OUT_REG : if G_OUT_REG generate
+        signal z_reg : std_logic_vector(0 to G_ORDER);
+        attribute DONT_TOUCH of z_reg : signal is "true";
     begin
-        if rising_edge(clk) and en = '1' then
-            m_reg <= m;
-            z_reg <= w xor m_reg;
-        end if;
-    end process;
+        process(clk) is
+        begin
+            if rising_edge(clk) and en = '1' then
+                m_reg <= m;
+                z_reg <= w xor m_reg;
+            end if;
+        end process;
+        z <= z_reg;
 
-    z <= z_reg;
+    else generate
+        process(clk) is
+        begin
+            if rising_edge(clk) and en = '1' then
+                m_reg <= m;
+            end if;
+        end process;
+        z <= w xor m_reg;
+    end generate;
 
 end architecture;
 
@@ -190,13 +222,14 @@ end architecture;
 library ieee;
 use ieee.std_logic_1164.all;
 
-use work.util_pkg.all;
+use work.hpc3_utils_pkg.all;
 
 entity hpc3_and_vector is
     generic(
         -- protection order (number of shares = G_ORDER + 1)
-        G_ORDER : natural  := 1;
-        G_W     : positive := 1
+        G_ORDER : natural;
+        G_W     : positive;
+        G_PLUS  : boolean
     );
     port(
         clk : in  std_logic;
@@ -206,7 +239,7 @@ entity hpc3_and_vector is
         x   : in  slv_array(0 to G_ORDER)(G_W - 1 downto 0);
         y   : in  slv_array(0 to G_ORDER)(G_W - 1 downto 0);
         --! fresh random input
-        r   : in  std_logic_vector(0 to G_W * G_ORDER * (G_ORDER + 1) - 1);
+        r   : in  std_logic_vector(0 to G_W * G_ORDER * (G_ORDER + 1 + to_integer(G_PLUS)) - 1);
         --! output in `ORDER + 1` shares
         z   : out slv_array(0 to G_ORDER)(G_W - 1 downto 0)
     );
@@ -225,72 +258,31 @@ begin
             z(j)(i) <= zi(j);
         end generate;
 
-        INST_HPC3 : entity work.hpc3_and
-            generic map(G_ORDER => G_ORDER)
-            port map(
-                clk => clk,
-                en  => en,
-                x   => xi,
-                y   => yi,
-                r   => r(i * G_ORDER * (G_ORDER + 1) to (i + 1) * G_ORDER * (G_ORDER + 1) - 1),
-                z   => zi
-            );
+        GEN_HPC3 : if G_PLUS generate
+            INST_HPC3_PLUS : entity work.hpc3_plus_and
+                generic map(G_ORDER => G_ORDER)
+                port map(
+                    clk => clk,
+                    en  => en,
+                    x   => xi,
+                    y   => yi,
+                    r   => r(i * G_ORDER * (G_ORDER + 2) to (i + 1) * G_ORDER * (G_ORDER + 2) - 1),
+                    z   => zi
+                );
 
-    end generate;
+        else generate
+            INST_HPC3 : entity work.hpc3_and
+                generic map(G_ORDER => G_ORDER)
+                port map(
+                    clk => clk,
+                    en  => en,
+                    x   => xi,
+                    y   => yi,
+                    r   => r(i * G_ORDER * (G_ORDER + 1) to (i + 1) * G_ORDER * (G_ORDER + 1) - 1),
+                    z   => zi
+                );
 
-end architecture;
-
---===============================================================================================--
-
-library ieee;
-use ieee.std_logic_1164.all;
-
-use work.util_pkg.all;
-
-entity hpc3_plus_and_vector is
-    generic(
-        -- protection order (number of shares = G_ORDER + 1)
-        G_ORDER : natural  := 1;
-        G_W     : positive := 1
-    );
-    port(
-        clk : in  std_logic;
-        --! clock-enable, enables register updates
-        en  : in  std_logic := '1';
-        --! inputs 'x' and 'y', each split into `ORDER + 1` shares
-        x   : in  slv_array(0 to G_ORDER)(G_W - 1 downto 0);
-        y   : in  slv_array(0 to G_ORDER)(G_W - 1 downto 0);
-        --! fresh random input
-        r   : in  std_logic_vector(0 to G_W * G_ORDER * (G_ORDER + 2) - 1);
-        --! output in `ORDER + 1` shares
-        z   : out slv_array(0 to G_ORDER)(G_W - 1 downto 0)
-    );
-
-end entity;
-
-architecture RTL of hpc3_plus_and_vector is
-begin
-
-    GEN_INST : for i in 0 to G_W - 1 generate
-        signal xi, yi, zi : std_logic_vector(0 to G_ORDER);
-    begin
-        GEN_WIRING : for j in 0 to G_ORDER generate
-            xi(j)   <= x(j)(i);
-            yi(j)   <= y(j)(i);
-            z(j)(i) <= zi(j);
         end generate;
-
-        INST_HPC3 : entity work.hpc3_plus_and
-            generic map(G_ORDER => G_ORDER)
-            port map(
-                clk => clk,
-                en  => en,
-                x   => xi,
-                y   => yi,
-                r   => r(i * G_ORDER * (G_ORDER + 2) to (i + 1) * G_ORDER * (G_ORDER + 2) - 1),
-                z   => zi
-            );
-
     end generate;
 
 end architecture;

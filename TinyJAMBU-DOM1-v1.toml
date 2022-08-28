@@ -21,13 +21,13 @@ sources = [
     "src_rtl/dom_nlfsr.vhd",
     "src_rtl/tinyjambu_datapath.vhd",
     "src_rtl/tinyjambu_control.vhd",
+    "src_rtl/tag_verif.vhd",
     "src_rtl/CryptoCore_SCA.vhd",
     "src_rtl/LWC/PISO.vhd",
     "src_rtl/LWC/SIPO.vhd",
     "src_rtl/LWC/FIFO.vhd",
     "src_rtl/LWC/PreProcessor.vhd",
     "src_rtl/LWC/PostProcessor.vhd",
-    "src_rtl/tag_verif.vhd",
     ## SCA protected version of LWC top
     "src_rtl/LWC/LWC_SCA.vhd",
 ]

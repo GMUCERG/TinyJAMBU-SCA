@@ -57,7 +57,7 @@ entity CryptoCore_SCA is
         msg_auth_ready  : in  std_logic;
         msg_auth        : out std_logic;
         --! Random Input
-        rdi             : in  std_logic_vector(RW - 1 downto 0);
+        rdi             : in  std_logic_vector(CCRW - 1 downto 0);
         rdi_valid       : in  std_logic;
         rdi_ready       : out std_logic
     );

@@ -34,8 +34,8 @@ entity dom_nlfsr is
         cycle_odd : in  std_logic
     );
 
-    -- attribute DONT_TOUCH : string;
-    -- attribute DONT_TOUCH of dom_nlfsr : entity is "true";
+    attribute DONT_TOUCH : string;
+    attribute DONT_TOUCH of dom_nlfsr : entity is "true";
 end entity dom_nlfsr;
 
 architecture behav of dom_nlfsr is
@@ -46,9 +46,9 @@ architecture behav of dom_nlfsr is
     signal and_out : share_array;
     --============================================
 
-    -- attribute DONT_TOUCH of and_x : signal is "true";
-    -- attribute DONT_TOUCH of and_y : signal is "true";
-    -- attribute DONT_TOUCH of and_out : signal is "true";
+    attribute DONT_TOUCH of and_x : signal is "true";
+    attribute DONT_TOUCH of and_y : signal is "true";
+    attribute DONT_TOUCH of and_out : signal is "true";
 
 begin
 

@@ -147,8 +147,10 @@ class LwcDesign(Design):
 SCRIPT_DIR = Path(__file__).parent.resolve()
 
 
-def build_libs(andidates_dir):
-    args = ["--prepare_libs", "--candidates_dir", str(andidates_dir)]
+def build_libs(cref_dir):
+    args = ["--prepare_libs"]
+    if cref_dir is not None:
+        args += ["--candidates_dir", str(cref_dir)]
     return run_cryptotvgen(args)
 
 
@@ -159,7 +161,7 @@ def gen_tv(
     bench=False,
     cref_dir=None,
 ):
-    # build_libs(CREF_DIR)
+    build_libs(cref_dir)
     args = [
         "--dest",
         str(dest_dir),
@@ -350,7 +352,15 @@ def cli(toml_path, debug):
                 long_row[fresh_rand_col_name] = rnd_diff
                 results.append(long_row)
     results_file = design.name + "_timing_results.csv"
-    fieldnames = ["Op", "Reuse Key", "msgBytes", "adBytes", "Cycles", "Throughput", fresh_rand_col_name]
+    fieldnames = [
+        "Op",
+        "Reuse Key",
+        "msgBytes",
+        "adBytes",
+        "Cycles",
+        "Throughput",
+        fresh_rand_col_name,
+    ]
 
     def sorter(x):
         k = [99999 if x[f] == "long" else x[f] for f in fieldnames]

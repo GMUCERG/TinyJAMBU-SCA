@@ -39,6 +39,7 @@ entity tinyjambu_control is
         fbits_sel       : out std_logic_vector(1 downto 0);
         s_sel           : out std_logic_vector(1 downto 0);
         partial_bytes   : out std_logic_vector(1 downto 0);
+        cycle_odd       : out std_logic;
         -- CryptoCore Control Signals
         --        key             : in std_logic_vector       (CCSW-1     downto 0);
         key_valid       : in  std_logic;
@@ -107,11 +108,15 @@ architecture behavioral of tinyjambu_control is
     signal next_npub : unsigned(1 downto 0);
 
     signal wrd_cnt, next_wrd_cnt         : unsigned(8 - 1 downto 0);
+    
+    signal rdi_ready_s : std_logic;
 
 begin
 
     key_index <= std_logic_vector(key_count(1 downto 0));
-
+    cycle_odd <= cycles(0);
+    rdi_ready        <= rdi_ready_s and cycle_odd;
+    
     process(clk)
     begin
         if rising_edge(clk) then
@@ -157,7 +162,7 @@ begin
         next_state       <= state;
         next_wrd_cnt     <= wrd_cnt;
         --
-        rdi_ready        <= '0';
+        rdi_ready_s        <= '0'; --DEBUG
 
         case state is
 
@@ -184,7 +189,7 @@ begin
                     end if;
                 end if;
             when KEY_INIT =>
-                rdi_ready <= '1';
+                rdi_ready_s <= '1';
                 if rdi_valid = '1' then
                     nlfsr_en    <= '1';
                     next_cycles <= cycles + 1;
@@ -200,7 +205,7 @@ begin
                 next_npub   <= npub;
                 next_state  <= NPUB_INIT_B;
             when NPUB_INIT_B =>
-                rdi_ready <= '1';
+                rdi_ready_s <= '1';
                 if rdi_valid = '1' then
                     nlfsr_en    <= '1';
                     next_cycles <= cycles + 1;
@@ -240,7 +245,7 @@ begin
                 next_state  <= AD_B;
                 next_cycles <= (others => '0');
             when AD_B =>
-                rdi_ready <= '1';
+                rdi_ready_s <= '1';
                 if rdi_valid = '1' then
                     nlfsr_en    <= '1';
                     next_cycles <= cycles + 1;
@@ -276,7 +281,7 @@ begin
                 next_cycles <= (others => '0');
                 next_state  <= ENCRYPT_B;
             when ENCRYPT_B =>
-                rdi_ready <= '1';
+                rdi_ready_s <= '1';
                 if rdi_valid = '1' then
                     nlfsr_en    <= '1';
                     next_cycles <= cycles + 1;
@@ -318,9 +323,9 @@ begin
                 next_state  <= TAG_B;
                 -- prep TAG verification
                 tv_rdi_valid <= rdi_valid;
-                rdi_ready <= tv_rdi_ready;
+--                rdi_ready <= tv_rdi_ready;
             when TAG_B =>
-                rdi_ready <= '1';
+                rdi_ready_s <= '1';
                 if rdi_valid = '1' then
                     nlfsr_en    <= '1';
                     next_cycles <= cycles + 1;
@@ -334,11 +339,11 @@ begin
                 bdo_sel         <= '1';
                 if (decrypt_in = '1') then
                     tv_rdi_valid <= rdi_valid;
-                    rdi_ready <= tv_rdi_ready;
+--                    rdi_ready <= tv_rdi_ready;
                     --
                     bdi_ready <= cc_tag_ready;
                     cc_tag_valid <= '1';
-                    if bdi_valid and bdi_ready then
+                    if bdi_valid = '1' and bdi_ready = '1' then
                         next_state <= TAG_D;
                     end if;
                 else
@@ -354,7 +359,7 @@ begin
                 next_cycles <= (others => '0');
                 next_state  <= TAG_E;
             when TAG_E =>
-                rdi_ready <= '1';
+                rdi_ready_s <= '1';
                 if rdi_valid = '1' then
                     nlfsr_en    <= '1';
                     next_cycles <= cycles + 1;
@@ -370,12 +375,12 @@ begin
 
                 if (decrypt_in = '1') then
                     tv_rdi_valid <= rdi_valid;
-                    rdi_ready <= tv_rdi_ready;
+--                    rdi_ready <= tv_rdi_ready;
                     --
                     bdi_ready <= cc_tag_ready;
                     cc_tag_valid <= '1';
                     cc_tag_last <= '1';
-                    if bdi_valid and bdi_ready then
+                    if bdi_valid = '1' and bdi_ready = '1' then
                         next_state <= SEND_AUTH;
                     end if;
                 else
@@ -386,7 +391,7 @@ begin
                 end if;
 
             when SEND_AUTH =>
-                if tv_done then
+                if tv_done = '1' then
                     next_state <= IDLE;
                 end if;
         end case;

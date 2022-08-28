@@ -24,7 +24,10 @@ SCRIPT_DIR = Path(__file__).parent.resolve()
 
 sys.path.append(str(SCRIPT_DIR / "scripts"))
 
-from gen_shared import run as run_gen_shared
+try:
+    from gen_shared import run as run_gen_shared
+except ImportError:
+    from .scripts.gen_shared import run as run_gen_shared
 
 try:
     from lwc_design import LwcDesign

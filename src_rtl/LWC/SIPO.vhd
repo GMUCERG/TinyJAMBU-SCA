@@ -43,7 +43,7 @@ entity SIPO is
         --! Pipelined (and not passthrough)
         G_PIPELINED           : boolean  := FALSE;
         --! If `FALSE` ignores sin_last/pout_last and assume input data sequence always comes in a multiple of G_N
-        G_SUBWORD             : boolean  := FALSE;
+        G_SUBWORD             : boolean  := TRUE;
         --! zero-out the words in output not filled due to early sin_last.
         --! Only effective when `G_SUBWORD = TRUE`
         G_CLEAR_INVALID_BYTES : boolean  := TRUE
@@ -53,9 +53,9 @@ entity SIPO is
         rst        : in  std_logic;
         --! Serial Input
         sin_data   : in  std_logic_vector(G_CHANNELS * G_IN_W - 1 downto 0);
-        sin_keep   : in  std_logic_vector(G_IN_W / 8 - 1 downto 0);
+        sin_keep   : in  std_logic_vector(G_IN_W / 8 - 1 downto 0) := (others => '0');
         -- last input word. The output will be then ready, even if less than G_IN parts are filled in
-        sin_last   : in  std_logic;
+        sin_last   : in  std_logic                                 := '0';
         sin_valid  : in  std_logic;
         sin_ready  : out std_logic;
         --! Parallel Output
@@ -73,7 +73,7 @@ architecture RTL of SIPO is
         variable k   : natural;
         variable ret : std_logic_vector(slv'range) := (others => '0');
     begin
-        if not G_CLEAR_INVALID_BYTES then
+        if not G_CLEAR_INVALID_BYTES or not G_SUBWORD then
             return slv;
         end if;
         for i in 0 to G_CHANNELS - 1 loop
@@ -162,13 +162,15 @@ begin
         & LF & "  G_CLEAR_INVALID_BYTES " & boolean'image(G_CLEAR_INVALID_BYTES) --
         severity NOTE;
 
-        assert not (                    -- invalid or not supported parameter combinations
-            (G_PIPELINED and (G_SUBWORD or G_CLEAR_INVALID_BYTES) ) or --
-            (G_CLEAR_INVALID_BYTES and not G_SUBWORD) --
-        )
+        assert not (G_PIPELINED and G_SUBWORD) -- invalid or not supported parameter combinations
         report "Parameter combination is not supported!"
         severity FAILURE;
 
+        assert not (                    -- invalid or not supported parameter combinations
+            (G_CLEAR_INVALID_BYTES and not G_SUBWORD) --
+        )
+        report "G_CLEAR_INVALID_BYTES will be disabled as G_SUBWORD=FALSE"
+        severity WARNING;
         --==================================== GEN_SPLIT_SIN ====================================--
         GEN_SPLIT_SIN : for i in sin_data_arr'range generate
             sin_data_arr(i) <= sin_data_clr((i + 1) * G_IN_W - 1 downto i * G_IN_W);
@@ -192,11 +194,11 @@ begin
                     end if;
                 end if;
             end process;
-            GEN_CHANNELS : for ch in 0 to G_CHANNELS - 1 generate
+            GEN_CHANNELS_PIPELINED : for ch in 0 to G_CHANNELS - 1 generate
                 GEN_BUFF_WORDS : for i in 0 to BUFF_WORDS - 1 generate
                     pout_array(ch)(i) <= data(ch)(i);
                 end generate GEN_BUFF_WORDS;
-            end generate GEN_CHANNELS;
+            end generate GEN_CHANNELS_PIPELINED;
         end generate GEN_PIPELINED;
         -- Passthrough version, i.e., passes the last input to output
         -- there will be a combinational path from input data to output data
@@ -204,14 +206,14 @@ begin
             nx_marker <= INIT_MARKER when out_fire else
                          '0' & marker(0 to BUFF_WORDS - 1) when in_fire else
                          marker;
-            GEN_SUBWORD : if G_SUBWORD generate
+            GEN_SUBWORD_PIPELINED : if G_SUBWORD generate
                 pout_valid_o <= (is_full or sin_last = '1') and sin_valid = '1';
-            end generate GEN_SUBWORD;
-            GEN_NOT_SUBWORD : if not G_SUBWORD generate
+            end generate GEN_SUBWORD_PIPELINED;
+            GEN_NOT_SUBWORD_PIPELINED : if not G_SUBWORD generate
                 pout_valid_o <= is_full and sin_valid = '1';
-            end generate GEN_NOT_SUBWORD;
+            end generate GEN_NOT_SUBWORD_PIPELINED;
 
-            GEN_CHANNELS : for ch in 0 to G_CHANNELS - 1 generate
+            GEN_CHANNELS_PIPELINED : for ch in 0 to G_CHANNELS - 1 generate
                 process(clk) is
                 begin
                     if rising_edge(clk) then
@@ -246,17 +248,17 @@ begin
         GEN_SUBWORD : if G_SUBWORD generate
             signal valids : std_logic_vector(0 to BUFF_WORDS - 1);
         begin
-            GEN_CHANNELS : for ch in 0 to G_CHANNELS - 1 generate
+            GEN_CHANNELS_SUBWORD : for ch in 0 to G_CHANNELS - 1 generate
                 GEN_POUT_ARRAY : for i in 0 to BUFF_WORDS - 1 generate
                     pout_array(ch)(i) <= and_mask(valids(i), data(ch)(i)) or --
                                          and_mask(marker(i), sin_data_arr(ch));
                 end generate;
-                GEN_CLEAR_INVALIDS : if G_CLEAR_INVALID_BYTES generate
+                GEN_CLEAR_INVALIDS_SUBWORD : if G_CLEAR_INVALID_BYTES generate
                     pout_array(ch)(BUFF_WORDS) <= and_mask(marker(BUFF_WORDS), sin_data_arr(ch));
-                end generate GEN_CLEAR_INVALIDS;
-                GEN_NOT_CLEAR_INVALIDS : if not G_CLEAR_INVALID_BYTES generate -- else generate
+                end generate GEN_CLEAR_INVALIDS_SUBWORD;
+                GEN_NOT_CLEAR_INVALIDS_SUBWORD : if not G_CLEAR_INVALID_BYTES generate -- else generate
                     pout_array(ch)(BUFF_WORDS) <= sin_data_arr(ch);
-                end generate GEN_NOT_CLEAR_INVALIDS;
+                end generate GEN_NOT_CLEAR_INVALIDS_SUBWORD;
             end generate;
 
             GEN_POUT_KEEP : for i in 0 to BUFF_WORDS generate

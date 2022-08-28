@@ -23,14 +23,15 @@ use work.design_pkg.all;
 
 entity dom_nlfsr is
     port(
-        clk    : in  std_logic;
-        reset  : in  std_logic;
-        enable : in  std_logic;
-        key    : in  data_array;
-        load   : in  std_logic;
-        din    : in  data_array;
-        dout   : out data_array;
-        rnd    : in  std_logic_vector(CCRW - 1 downto 0)
+        clk       : in  std_logic;
+        reset     : in  std_logic;
+        enable    : in  std_logic;
+        key       : in  data_array;
+        load      : in  std_logic;
+        din       : in  data_array;
+        dout      : out data_array;
+        rnd       : in  std_logic_vector(CCRW - 1 downto 0);
+        cycle_odd : in  std_logic
     );
 
     attribute DONT_TOUCH : string;
@@ -38,50 +39,39 @@ entity dom_nlfsr is
 end entity dom_nlfsr;
 
 architecture behav of dom_nlfsr is
-    attribute keep_hierarchy : string;
-    attribute keep_hierarchy of behav : architecture is "true";
+    -- attribute DONT_TOUCH of behav : architecture is "true";
     --============================================
-    signal and_x             : share_array;
-    signal and_y             : share_array;
-    signal and_out           : share_array;
+    signal and_x   : share_array;
+    signal and_y   : share_array;
+    signal and_out : share_array;
     --============================================
-    attribute keep           : string;
-    attribute keep of and_x : signal is "true";
-    attribute keep of and_y : signal is "true";
-    attribute keep of and_out : signal is "true";
+
+    attribute DONT_TOUCH of and_x : signal is "true";
+    attribute DONT_TOUCH of and_y : signal is "true";
+    attribute DONT_TOUCH of and_out : signal is "true";
 
 begin
 
-    dom_and : entity work.dom_mul_dep(behav)
-        port map(
-            clk => clk,
-            x   => and_x,
-            y   => and_y,
-            rnd => rnd,
-            q   => and_out
-        );
-
-    reg_feed0 : entity work.dom_nlfsr_reg_feed
+    hpc3_and : entity work.hpc3_mul
         generic map(
-            CONST_ADD => true
+            G_ORDER        => NUM_SHARES - 1,
+            G_W            => SHARE_WIDTH,
+            G_PLUS         => HPC3_PLUS,
+            G_PLUS_OUT_REG => false
         )
         port map(
-            clk     => clk,
-            reset   => reset,
-            enable  => enable,
-            key     => key(0),
-            load    => load,
-            din     => din(0),
-            dout    => dout(0),
-            and_x   => and_x(0),
-            and_y   => and_y(0),
-            and_out => and_out(0)
+            clk => clk,
+            en  => (enable and not cycle_odd),
+            x   => and_x,
+            y   => and_y,
+            r   => rnd,
+            z   => and_out
         );
 
-    reg_feed_gen : for i in 1 to NUM_SHARES - 1 generate
+    reg_feed_gen : for i in 0 to NUM_SHARES - 1 generate
         reg_feed_i : entity work.dom_nlfsr_reg_feed
             generic map(
-                CONST_ADD => false
+                CONST_ADD => i = 0
             )
             port map(
                 clk     => clk,

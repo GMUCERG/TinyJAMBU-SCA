@@ -42,7 +42,8 @@ entity tinyjambu_datapath is
         s_sel           : in  std_logic_vector(1 downto 0);
         bdo_sel         : in  std_logic;
         bdo             : out T_BDIO_ARRAY;
-        rnd             : in  std_logic_vector(RW - 1 downto 0)
+        rnd             : in  std_logic_vector(RW - 1 downto 0);
+        cycle_odd       : in std_logic
     );
 end entity tinyjambu_datapath;
 
@@ -89,12 +90,14 @@ begin
         port map(
             clk    => clk,
             reset  => nlfsr_reset,
+--            enable => (nlfsr_en and not cycle_odd),
             enable => nlfsr_en,
             key    => nlfsr_key,
             load   => nlfsr_load,
             din    => nlfsr_din,
             dout   => nlfsr_dout,
-            rnd    => rnd
+            rnd    => rnd,
+            cycle_odd => cycle_odd
         );
 
 end architecture behav;

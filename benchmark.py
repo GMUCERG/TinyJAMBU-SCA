@@ -97,7 +97,7 @@ class Lwc(BaseModel):
             bit_width: int = Field(
                 0,
                 ge=0,
-                le=2048,
+                # le=2048,
                 description="Width of the `rdi` port in bits (`rw`), 0 if the port is not used.",
             )
 
@@ -299,11 +299,15 @@ def cli(toml_path, debug):
     assert timing_report.exists()
 
     msg_cycles: Dict[str, int] = {}
+    msg_fresh_rand: Dict[str, int] = {}
+    fresh_rand_col_name = "Rnd"
     with open(timing_report) as f:
         for l in f.readlines():
             kv = re.split(r"\s*,\s*", l.strip())
-            if len(kv) == 2:
+            if len(kv) >= 2:
                 msg_cycles[kv[0]] = int(kv[1])
+            if len(kv) >= 3:
+                msg_fresh_rand[kv[0]] = int(kv[2], 16)
     results: List[dict[str, Union[int, float, str]]] = []
     with open(kat_dir / "timing_tests.csv") as f:
         rows: List[Dict[Any, Any]] = list(csv.DictReader(f))
@@ -311,6 +315,7 @@ def cli(toml_path, debug):
             msgid = row["msgId"]
             assert isinstance(msgid, str)
             row["Cycles"] = msg_cycles[msgid]
+            row[fresh_rand_col_name] = msg_fresh_rand[msgid]
             if row["hash"] == "True":
                 row["Op"] = "Hash"
             else:
@@ -336,14 +341,16 @@ def cli(toml_path, debug):
                 ad_diff = int(row["adBytes"]) - prev_ad
                 msg_diff = int(row["msgBytes"]) - prev_msg
                 cycle_diff = msg_cycles[msgid] - msg_cycles[prev_id]
+                rnd_diff = msg_fresh_rand[msgid] - msg_fresh_rand[prev_id]
                 long_row["adBytes"] = "long" if int(row["adBytes"]) else 0
                 long_row["msgBytes"] = "long" if int(row["msgBytes"]) else 0
                 long_row["Cycles"] = cycle_diff
                 long_row["msgId"] = prev_id + ":" + msgid
                 long_row["Throughput"] = round((ad_diff + msg_diff) / cycle_diff, 3)
+                long_row[fresh_rand_col_name] = rnd_diff
                 results.append(long_row)
     results_file = design.name + "_timing_results.csv"
-    fieldnames = ["Op", "Reuse Key", "msgBytes", "adBytes", "Cycles", "Throughput"]
+    fieldnames = ["Op", "Reuse Key", "msgBytes", "adBytes", "Cycles", "Throughput", fresh_rand_col_name]
 
     def sorter(x):
         k = [99999 if x[f] == "long" else x[f] for f in fieldnames]

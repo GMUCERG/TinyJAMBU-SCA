@@ -240,30 +240,6 @@ architecture TB of LWC_TB is
         end if;
     end function;
 
-    component LWC_SCA
-        port(
-            clk       : in  std_logic;
-            rst       : in  std_logic;
-            --! Public data input
-            pdi_data  : in  std_logic_vector(PDI_SHARES * W - 1 downto 0);
-            pdi_valid : in  std_logic;
-            pdi_ready : out std_logic;
-            --! Secret data input
-            sdi_data  : in  std_logic_vector(SDI_SHARES * SW - 1 downto 0);
-            sdi_valid : in  std_logic;
-            sdi_ready : out std_logic;
-            --! Data out ports
-            do_data   : out std_logic_vector(PDI_SHARES * W - 1 downto 0);
-            do_last   : out std_logic;
-            do_valid  : out std_logic;
-            do_ready  : in  std_logic;
-            --! Random Input
-            rdi_data  : in  std_logic_vector(RW - 1 downto 0);
-            rdi_valid : in  std_logic;
-            rdi_ready : out std_logic
-        );
-    end component;
-
 begin
     --===========================================================================================--
     -- generate clock
@@ -653,14 +629,14 @@ begin
                             wait until not timing_active;
                             write(logMsg, integer'image(msgid) & "," & integer'image(cycles));
                             if RW > 0 then
-                                write(logMsg, "," & to_hstring(rdi_bits)); -- TODO rdi_counter can overflow (integer is only 32 bits). Use unsigned.
+                                write(logMsg, "," & to_string(rdi_bits));
                             end if;
                             writeline(timing_file, logMsg);
                             if G_VERBOSE_LEVEL > 0 then
                                 if RW > 0 then
                                     report "[Timing] MsgId: " & integer'image(msgid) & ", cycles: " & integer'image(cycles) severity note;
                                 else
-                                    report "[Timing] MsgId: " & integer'image(msgid) & ", cycles: " & integer'image(cycles) & ", RDI words: " & integer'image(rdi_cnt) & ", RDI bits: " & to_hstring(rdi_bits) severity note;
+                                    report "[Timing] MsgId: " & integer'image(msgid) & ", cycles: " & integer'image(cycles) & ", RDI words: " & integer'image(rdi_cnt) & ", RDI bits: " & to_string(rdi_bits) severity note;
                                 end if;
                             end if;
                         end if;

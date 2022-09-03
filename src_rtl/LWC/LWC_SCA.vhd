@@ -119,9 +119,6 @@ architecture structure of LWC_SCA is
     signal do_fifo_in_data            : std_logic_vector(do_data'length - 1 downto 0);
     signal do_fifo_in_last            : std_logic;
     signal do_fifo_in, do_fifo_out    : std_logic_vector(do_data'length downto 0); -- data + last
-    -- RDI
-    signal cc_rdi_data                : std_logic_vector(CCRW - 1 downto 0);
-    signal cc_rdi_valid, cc_rdi_ready : std_logic;
 
     --============================================ Component Declarations ===========================================--
     component CryptoCore_SCA
@@ -260,9 +257,9 @@ begin
             msg_auth        => msg_auth,
             msg_auth_valid  => msg_auth_valid,
             msg_auth_ready  => msg_auth_ready,
-            rdi             => cc_rdi_data,
-            rdi_valid       => cc_rdi_valid,
-            rdi_ready       => cc_rdi_ready
+            rdi             => rdi_data,
+            rdi_valid       => rdi_valid,
+            rdi_ready       => rdi_ready
         );
 
     Inst_PostProcessor : entity work.PostProcessor
@@ -323,27 +320,6 @@ begin
             dout       => do_fifo_out,
             dout_valid => do_valid,
             dout_ready => do_ready
-        );
-
-    INST_RDI_SIPO : entity work.SIPO
-        generic map(
-            G_IN_W                => RW,
-            G_N                   => CCRW / RW,
-            G_CHANNELS            => 1,
-            G_ASYNC_RSTN          => ASYNC_RSTN,
-            G_PIPELINED           => TRUE,
-            G_SUBWORD             => FALSE,
-            G_CLEAR_INVALID_BYTES => FALSE
-        )
-        port map(
-            clk => clk,
-            rst => rst,
-            sin_data => rdi_data,
-            sin_valid => rdi_valid,
-            sin_ready => rdi_ready,
-            pout_data => cc_rdi_data,
-            pout_valid => cc_rdi_valid,
-            pout_ready => cc_rdi_ready
         );
 
     do_fifo_in <= do_fifo_in_last & do_fifo_in_data;

@@ -17,7 +17,11 @@ jobs:
     - uses: actions/checkout@v2
     - name: Install dependencies
       run: |
-        python3 -m pip install --upgrade git+https://github.com/XedaHQ/xeda.git@dev
-    - name: dummy core test_all
+        python3 -m pip install --upgrade xeda
+        python3 -m pip install --upgrade 'git+https://github.com/GMUCERG/LWC.git#egg=cryptotvgen&subdirectory=software/cryptotvgen'
+    - name: verify
       run: |
         python3 ./test.py
+    - name: benchmark
+      run: |
+        python3 ./benchmark.py ./TinyJAMBU-DOM1-v1.toml

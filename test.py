@@ -10,9 +10,10 @@ import csv
 import logging
 import re
 import sys
+import os
 from copy import copy
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 import cryptotvgen
 from rich.console import Console
@@ -46,7 +47,7 @@ KAT_FOLDER = Path("BENCH_KAT")
 RBPB = "rand b/B"
 
 
-def parse_timing_report(timing_report, timing_tests_desc: List[Dict[Any, Any]], RW):
+def parse_timing_report(timing_report, timing_tests_desc: List[Dict[Any, Any]]):
     """extract timing results in timing_report using meta-data in timing_tests_desc"""
     assert timing_report.exists()
 
@@ -57,8 +58,8 @@ def parse_timing_report(timing_report, timing_tests_desc: List[Dict[Any, Any]], 
             kv = re.split(r"\s*,\s*", l.strip())
             if len(kv) >= 2:
                 msg_cycles[kv[0]] = int(kv[1])
-            if RW and len(kv) >= 3:
-                rdi_words[kv[0]] = RW * int(kv[2])
+            if len(kv) >= 3:
+                rdi_words[kv[0]] = int(kv[2])
     results: List[dict[str, Union[int, float, str]]] = []
     for row in timing_tests_desc:
         msgid = row["msgId"]
@@ -118,6 +119,16 @@ def parse_timing_report(timing_report, timing_tests_desc: List[Dict[Any, Any]], 
         ]
 
     return sorted(results, key=sort_order)
+
+
+def build_libs(cref_dir: Union[None, str, os.PathLike, Path]):
+    args = ["--prepare_libs"]
+    if cref_dir is not None:
+        if not isinstance(cref_dir, Path):
+            cref_dir = Path(cref_dir)
+        if cref_dir.exists():
+            args += ["--candidates_dir", str(cref_dir)]
+    return cryptotvgen.cli.run_cryptotvgen(args)
 
 
 def run(args=None):
@@ -248,7 +259,6 @@ def run(args=None):
             results = parse_timing_report(
                 timing_report,
                 timing_tests_desc,
-                lwc.ports.rdi and lwc.ports.rdi.bit_width,
             )
             results_file = design.name + "_timing_results.csv"
             fieldnames = [
@@ -281,4 +291,6 @@ def run(args=None):
 
 
 if __name__ == "__main__":
+    cref_dir = Path("cref")
+    build_libs(cref_dir)
     run()

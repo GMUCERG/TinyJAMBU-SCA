@@ -157,6 +157,76 @@ package NIST_LWAPI_pkg is
     --================================= Component Declarations ==================================--
     -- component declarations make mixed-language simulation possible
 
+    component LWC
+        port(
+            clk       : in  std_logic;
+            rst       : in  std_logic;
+            pdi_data  : in  std_logic_vector(PDI_SHARES * W - 1 downto 0);
+            pdi_valid : in  std_logic;
+            pdi_ready : out std_logic;
+            sdi_data  : in  std_logic_vector(SDI_SHARES * SW - 1 downto 0);
+            sdi_valid : in  std_logic;
+            sdi_ready : out std_logic;
+            do_data   : out std_logic_vector(PDI_SHARES * W - 1 downto 0);
+            do_last   : out std_logic;
+            do_valid  : out std_logic;
+            do_ready  : in  std_logic
+        );
+    end component;
+
+    component LWC_SCA
+        port(
+            clk       : in  std_logic;
+            rst       : in  std_logic;
+            --! Public data input
+            pdi_data  : in  std_logic_vector(PDI_SHARES * W - 1 downto 0);
+            pdi_valid : in  std_logic;
+            pdi_ready : out std_logic;
+            --! Secret data input
+            sdi_data  : in  std_logic_vector(SDI_SHARES * SW - 1 downto 0);
+            sdi_valid : in  std_logic;
+            sdi_ready : out std_logic;
+            --! Data out ports
+            do_data   : out std_logic_vector(PDI_SHARES * W - 1 downto 0);
+            do_last   : out std_logic;
+            do_valid  : out std_logic;
+            do_ready  : in  std_logic;
+            --! Random Input
+            rdi_data  : in  std_logic_vector(RW - 1 downto 0);
+            rdi_valid : in  std_logic;
+            rdi_ready : out std_logic
+        );
+    end component;
+
+    component LWC_2Pass
+        port(
+            --! Global ports
+            clk       : in  std_logic;
+            rst       : in  std_logic;
+            --! Publica data ports
+            pdi_data  : in  std_logic_vector(PDI_SHARES * W - 1 downto 0);
+            pdi_valid : in  std_logic;
+            pdi_ready : out std_logic;
+            --! Secret data ports
+            -- NOTE for future dev: this G_W is really SW!
+            sdi_data  : in  std_logic_vector(PDI_SHARES * SW - 1 downto 0);
+            sdi_valid : in  std_logic;
+            sdi_ready : out std_logic;
+            --! Data out ports
+            do_data   : out std_logic_vector(PDI_SHARES * W - 1 downto 0);
+            do_ready  : in  std_logic;
+            do_valid  : out std_logic;
+            do_last   : out std_logic;
+            --! Tow-pass FIFO interface
+            fdi_data  : in  std_logic_vector(PDI_SHARES * W - 1 downto 0);
+            fdi_valid : in  std_logic;
+            fdi_ready : out std_logic;
+            fdo_data  : out std_logic_vector(PDI_SHARES * W - 1 downto 0);
+            fdo_valid : out std_logic;
+            fdo_ready : in  std_logic
+        );
+    end component;
+
 end package;
 
 package body NIST_LWAPI_pkg is

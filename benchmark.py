@@ -147,10 +147,13 @@ class LwcDesign(Design):
 SCRIPT_DIR = Path(__file__).parent.resolve()
 
 
-def build_libs(cref_dir):
-    args = ["--prepare_libs"]
+def build_libs(agl_prefixes: List[str], cref_dir: Union[None, str, os.PathLike, Path] = None):
+    args = ["--prepare_libs"] + agl_prefixes
     if cref_dir is not None:
-        args += ["--candidates_dir", str(cref_dir)]
+        if not isinstance(cref_dir, Path):
+            cref_dir = Path(cref_dir)
+        if cref_dir.exists():
+            args += ["--candidates_dir", str(cref_dir)]
     return run_cryptotvgen(args)
 
 
@@ -161,7 +164,12 @@ def gen_tv(
     bench=False,
     cref_dir=None,
 ):
-    build_libs(cref_dir)
+    algs = []
+    if lwc.aead and lwc.aead.algorithm:
+        algs.append(lwc.aead.algorithm)
+    if lwc.hash and lwc.hash.algorithm:
+        algs.append(lwc.hash.algorithm)
+    build_libs(algs, cref_dir)
     args = [
         "--dest",
         str(dest_dir),

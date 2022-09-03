@@ -30,12 +30,12 @@ sources = [
     "src_rtl/LWC/PostProcessor.vhd",
     ## SCA protected version of LWC top
     "src_rtl/LWC/LWC_SCA.vhd",
-    # "src_rtl/LWC/LFSR.vhd",
-    # "src_rtl/LWC/LWC_SCA_wrapper.vhd",
+    "src_rtl/LWC/LFSR.vhd",
+    "src_rtl/LWC/LWC_SCA_wrapper.vhd",
 ]
 # includes = []
-top = "LWC_SCA"
-# top = "LWC_SCA_wrapper"
+# top = "LWC_SCA"
+top = "LWC_SCA_wrapper"
 clock.port = "clk"
 # clock.port = "clk"
 # reset.port = "reset"
@@ -52,10 +52,10 @@ vhdl.version = "2008"
 [tb]
 sources = [
     "src_tb/LWC_TB_SCA.vhd",
-    # "src_tb/LWC_TB_SCA_wrapper_conf.vhd",
+    "src_tb/LWC_TB_SCA_wrapper_conf.vhd",
 ]
-top = "LWC_TB"
-# top = "LWC_TB_SCA_wrapper_conf"
+# top = "LWC_TB"
+top = "LWC_TB_SCA_wrapper_conf"
 # includes = []
 
 [tb.parameters]

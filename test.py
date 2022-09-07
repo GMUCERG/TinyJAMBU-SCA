@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-# requires  Python 3.8+
-# requires xeda>=0.1.0.a10
+# requires Python 3.8+
+# requires xeda>=0.1.0
+# requires cryptotvgen
 
 
 "LWC script"
@@ -39,8 +40,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 console = Console()
 
-CREF_DIR = SCRIPT_DIR / "cref"
-
 KAT_FOLDER = Path("BENCH_KAT")
 
 
@@ -52,21 +51,21 @@ def parse_timing_report(timing_report, timing_tests_desc: List[Dict[Any, Any]]):
     assert timing_report.exists()
 
     msg_cycles: Dict[str, int] = {}
-    rdi_words: Dict[str, int] = {}
+    rdi_bits: Dict[str, int] = {}
     with open(timing_report) as f:
         for l in f.readlines():
             kv = re.split(r"\s*,\s*", l.strip())
             if len(kv) >= 2:
                 msg_cycles[kv[0]] = int(kv[1])
             if len(kv) >= 3:
-                rdi_words[kv[0]] = int(kv[2])
+                rdi_bits[kv[0]] = int(kv[2], 16)
     results: List[dict[str, Union[int, float, str]]] = []
     for row in timing_tests_desc:
         msgid = row["msgId"]
         assert isinstance(msgid, str)
         row["Cycles"] = msg_cycles[msgid]
-        if msgid in rdi_words:
-            row["Random"] = rdi_words[msgid]
+        if msgid in rdi_bits:
+            row["Random"] = rdi_bits[msgid]
         if row["hash"] == "True":
             row["Op"] = "Hash"
         else:
@@ -96,8 +95,8 @@ def parse_timing_report(timing_report, timing_tests_desc: List[Dict[Any, Any]]):
             long_row["adBytes"] = "long" if int(row["adBytes"]) else 0
             long_row["msgBytes"] = "long" if int(row["msgBytes"]) else 0
             long_row["Cycles"] = cycle_diff
-            if msgid in rdi_words:
-                rdi_diff = rdi_words[msgid] - rdi_words[prev_id]
+            if msgid in rdi_bits:
+                rdi_diff = rdi_bits[msgid] - rdi_bits[prev_id]
                 long_row["Random"] = rdi_diff
                 long_row[RBPB] = round(rdi_diff / (ad_diff + msg_diff), 3)
             long_row["msgId"] = prev_id + ":" + msgid
@@ -291,6 +290,6 @@ def run(args=None):
 
 
 if __name__ == "__main__":
-    cref_dir = Path("cref")
-    build_libs(cref_dir)
+    cref_dir = SCRIPT_DIR / "cref"
+    # build_libs(cref_dir)
     run()

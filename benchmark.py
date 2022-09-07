@@ -147,8 +147,8 @@ class LwcDesign(Design):
 SCRIPT_DIR = Path(__file__).parent.resolve()
 
 
-def build_libs(agl_prefixes: List[str], cref_dir: Union[None, str, os.PathLike, Path] = None):
-    args = ["--prepare_libs"] + agl_prefixes
+def build_libs(algos: List[str], cref_dir: Union[None, str, os.PathLike, Path] = None):
+    args = ["--prepare_libs"] + algos
     if cref_dir is not None:
         if not isinstance(cref_dir, Path):
             cref_dir = Path(cref_dir)
@@ -164,12 +164,6 @@ def gen_tv(
     bench=False,
     cref_dir=None,
 ):
-    algs = []
-    if lwc.aead and lwc.aead.algorithm:
-        algs.append(lwc.aead.algorithm)
-    if lwc.hash and lwc.hash.algorithm:
-        algs.append(lwc.hash.algorithm)
-    build_libs(algs, cref_dir)
     args = [
         "--dest",
         str(dest_dir),
@@ -246,7 +240,14 @@ KATS_DIR = SCRIPT_DIR / "GMU_KAT"
     default=False,
     help="run flows in debug mode",
 )
-def cli(toml_path, debug):
+@click.option(
+    "--build",
+    is_flag=True,
+    show_default=True,
+    default=False,
+    help="force build reference libraries",
+)
+def cli(toml_path, debug, build=False):
     """toml_path: Path to design description TOML file."""
     design = LwcDesign.from_toml(toml_path)
     lwc = design.lwc
@@ -260,11 +261,16 @@ def cli(toml_path, debug):
     cref_dir = Path(toml_path).parent / "cref"
     if not cref_dir.exists():
         cref_dir = None
+    if build:
+        algs = []
+        if lwc.aead and lwc.aead.algorithm:
+            algs.append(lwc.aead.algorithm)
+        if lwc.hash and lwc.hash.algorithm:
+            algs.append(lwc.hash.algorithm)
+        build_libs(algs, cref_dir)
     gen_tv(design.lwc, tv_dir, bench=True, cref_dir=cref_dir)
     # KATs must exist
     kat_dir = tv_dir / "timing_tests"
-
-    kat_dir = kat_dir
     pdi_txt = kat_dir / "pdi.txt"
     sdi_txt = kat_dir / "sdi.txt"
     if pdi_shares > 1 or sdi_shares > 1:
@@ -310,7 +316,8 @@ def cli(toml_path, debug):
 
     msg_cycles: Dict[str, int] = {}
     msg_fresh_rand: Dict[str, int] = {}
-    fresh_rand_col_name = "Rnd"
+    fresh_rand_col_name = "Rand.\n[B]"
+    RBPB = "Rand.\n\\[b/B]"
     with open(timing_report) as f:
         for l in f.readlines():
             kv = re.split(r"\s*,\s*", l.strip())
@@ -337,9 +344,10 @@ def cli(toml_path, debug):
             )
             row["adBytes"] = int(row["adBytes"])
             row["msgBytes"] = int(row["msgBytes"])
-            row["Throughput"] = round(
-                (row["adBytes"] + row["msgBytes"]) / msg_cycles[msgid], 3
-            )
+            total_bytes = row["adBytes"] + row["msgBytes"]
+            row["Throughput"] = round(total_bytes / msg_cycles[msgid], 3)
+            if fresh_rand_col_name in row:
+                row[RBPB] = round(row[fresh_rand_col_name] / total_bytes, 3)
             results.append(row)
             if row["longN+1"] == "True":
                 long_row = copy(results[-2])
@@ -351,13 +359,15 @@ def cli(toml_path, debug):
                 ad_diff = int(row["adBytes"]) - prev_ad
                 msg_diff = int(row["msgBytes"]) - prev_msg
                 cycle_diff = msg_cycles[msgid] - msg_cycles[prev_id]
-                rnd_diff = msg_fresh_rand[msgid] - msg_fresh_rand[prev_id]
                 long_row["adBytes"] = "long" if int(row["adBytes"]) else 0
                 long_row["msgBytes"] = "long" if int(row["msgBytes"]) else 0
                 long_row["Cycles"] = cycle_diff
                 long_row["msgId"] = prev_id + ":" + msgid
                 long_row["Throughput"] = round((ad_diff + msg_diff) / cycle_diff, 3)
-                long_row[fresh_rand_col_name] = rnd_diff
+                if msgid in msg_fresh_rand:
+                    rnd_diff = msg_fresh_rand[msgid] - msg_fresh_rand[prev_id]
+                    long_row[fresh_rand_col_name] = rnd_diff
+                    long_row[RBPB] = round(rnd_diff / (ad_diff + msg_diff), 3)
                 results.append(long_row)
     results_file = design.name + "_timing_results.csv"
     fieldnames = [
@@ -368,6 +378,7 @@ def cli(toml_path, debug):
         "Cycles",
         "Throughput",
         fresh_rand_col_name,
+        RBPB,
     ]
 
     def sorter(x):
@@ -385,7 +396,18 @@ def cli(toml_path, debug):
         )
         writer.writeheader()
         writer.writerows(results)
-    table = Table(*fieldnames)
+    table = Table()
+
+    def tr(f):
+        tr_map = {
+            "Throughput": "Throughput\n[B/cycle]",
+            "msgBytes": "PT/CT\n[B",
+            "adBytes": "AD\n[B]",
+        }
+        return tr_map.get(f, f)
+
+    for f in fieldnames:
+        table.add_column(tr(f), justify="right")
     for row in results:
         row["Reuse Key"] = "✓" if row["Reuse Key"] else ""
         table.add_row(

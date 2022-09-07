@@ -629,14 +629,14 @@ begin
                             wait until not timing_active;
                             write(logMsg, integer'image(msgid) & "," & integer'image(cycles));
                             if RW > 0 then
-                                write(logMsg, "," & to_string(rdi_bits));
+                                write(logMsg, "," & to_hstring(rdi_bits));
                             end if;
                             writeline(timing_file, logMsg);
                             if G_VERBOSE_LEVEL > 0 then
                                 if RW > 0 then
                                     report "[Timing] MsgId: " & integer'image(msgid) & ", cycles: " & integer'image(cycles) severity note;
                                 else
-                                    report "[Timing] MsgId: " & integer'image(msgid) & ", cycles: " & integer'image(cycles) & ", RDI words: " & integer'image(rdi_cnt) & ", RDI bits: " & to_string(rdi_bits) severity note;
+                                    report "[Timing] MsgId: " & integer'image(msgid) & ", cycles: " & integer'image(cycles) & ", RDI words: " & integer'image(rdi_cnt) & ", RDI bits: " & to_hstring(rdi_bits) severity note;
                                 end if;
                             end if;
                         end if;

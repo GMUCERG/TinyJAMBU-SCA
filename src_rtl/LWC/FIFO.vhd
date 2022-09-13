@@ -74,6 +74,7 @@ begin
         dout_valid <= din_valid;
         din_ready  <= dout_ready;
     end generate;
+
     GEN_DEPTH_1 : if G_DEPTH = 1 generate
         --======================================= Registers =========================================--
         signal full                      : std_logic;
@@ -89,7 +90,7 @@ begin
         deq          <= dout_valid_o = '1' and dout_ready = '1';
         dout         <= storage(0);
         GEN_SYNC_RST : if not ASYNC_RSTN generate
-            process(clk)
+            process(clk) is
             begin
                 if rising_edge(clk) then
                     if rst = '1' then
@@ -104,7 +105,7 @@ begin
         end generate;
 
         GEN_ASYNC_RSTN : if ASYNC_RSTN generate
-            process(clk, rst)
+            process(clk, rst) is
             begin
                 if rst = '0' then
                     full <= '0';
@@ -118,7 +119,7 @@ begin
             end process;
         end generate;
         --
-        process(clk)
+        process(clk) is
         begin
             if rising_edge(clk) then
                 if enq then
@@ -127,6 +128,7 @@ begin
             end if;
         end process;
     end generate;
+
     GEN_DEPTH_2 : if G_DEPTH = 2 and G_ELASTIC_2 generate
         -----------------------------------------------------------------------------------------------
         --!  Implements a FIFO of depth 2 with no combinational path from inputs to outputs
@@ -138,7 +140,8 @@ begin
         ---------------------------------------------------------------------------------------------------
 
         --======================================= Registers =========================================--
-        signal filled      : unsigned(0 to G_DEPTH - 1);
+        signal filled : unsigned(0 to G_DEPTH - 1);
+
         --========================================= Wires ===========================================--
         signal filled_nxt  : unsigned(0 to G_DEPTH - 1);
         signal din_ready_o : std_logic;
@@ -152,7 +155,7 @@ begin
 
         -- update registers with a reset
         GEN_SYNC_RST : if not ASYNC_RSTN generate
-            process(clk)
+            process(clk) is
             begin
                 if rising_edge(clk) then
                     if rst = '1' then
@@ -164,7 +167,7 @@ begin
             end process;
         end generate;
         GEN_ASYNC_RSTN : if ASYNC_RSTN generate
-            process(clk, rst)
+            process(clk, rst) is
             begin
                 if rst = '0' then
                     filled <= (others => '0');
@@ -174,7 +177,7 @@ begin
             end process;
         end generate;
 
-        process(filled, din_valid, din_ready_o, dout_ready)
+        process(filled, din_valid, din_ready_o, dout_ready) is
         begin
             -- default reg feedback
             filled_nxt <= filled;
@@ -190,7 +193,7 @@ begin
         end process;
 
         -- update registers without reset (storage)
-        process(clk)
+        process(clk) is
         begin
             if rising_edge(clk) then
                 if din_valid = '1' and din_ready_o = '1' then
@@ -207,9 +210,10 @@ begin
 
     -- for depth > 2 (or non-isolating depth=2) implement as circular buffer
     GEN_DEPTH_GT_2 : if G_DEPTH > 2 or (G_DEPTH = 2 and not G_ELASTIC_2) generate
-        -- registers
-        signal rd_ptr, wr_ptr            : unsigned(DEPTH_BITS - 1 downto 0);
-        signal empty                     : std_logic;
+        --======================================= Registers =========================================--
+        signal rd_ptr, wr_ptr : unsigned(DEPTH_BITS - 1 downto 0);
+        signal empty          : std_logic;
+
         --========================================= Wires ===========================================--
         signal next_rd_ptr               : unsigned(DEPTH_BITS - 1 downto 0);
         signal enq, deq                  : std_logic;
@@ -229,7 +233,7 @@ begin
         -- `empty` is the only register which requires a reset
         -- synchronous active-high reset
         GEN_SYNC_RST : if not ASYNC_RSTN generate
-            process(clk)
+            process(clk) is
             begin
                 if rising_edge(clk) then
                     if rst = '1' then
@@ -246,7 +250,7 @@ begin
         end generate;
         -- asynchronous active-low reset
         GEN_ASYNC_RSTN : if ASYNC_RSTN generate
-            process(clk, rst)
+            process(clk, rst) is
             begin
                 if rst = '0' then
                     empty <= '1';
@@ -262,7 +266,7 @@ begin
             end process;
         end generate;
 
-        process(clk)
+        process(clk) is
         begin
             if rising_edge(clk) then
                 if empty = '1' then

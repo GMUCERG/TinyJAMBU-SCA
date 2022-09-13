@@ -308,13 +308,11 @@ package body NIST_LWAPI_pkg is
     function TO_INT01(S : UNSIGNED) return INTEGER is
     begin
         return to_integer(to_01(S));
-
     end function TO_INT01;
 
     function TO_INT01(S : std_logic_vector) return INTEGER is
     begin
         return TO_INT01(unsigned(S));
-
     end function TO_INT01;
 
     function is_zero(u : unsigned) return boolean is

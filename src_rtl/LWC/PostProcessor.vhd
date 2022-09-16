@@ -104,6 +104,8 @@ architecture RTL of PostProcessor is
    signal reset_hdr_counter, hdr_first, hdr_last : boolean;
    signal sending_hdr                            : boolean;
    signal last_flit_of_segment                   : boolean;
+   -- DEBUG (For VHDL simulators which do not dump enum typed signals)
+   signal dbg_state                              : natural;
 
    --========================================= Aliases =========================================--
    alias cmd_hdr_opcode    : std_logic_vector(3 downto 0) is cmd_data(W - 1 downto W - 4);
@@ -119,6 +121,8 @@ architecture RTL of PostProcessor is
    alias seglen_counter_lo : unsigned(LOG2_W_DIV_8 - 1 downto 0) is seglen_counter(LOG2_W_DIV_8 - 1 downto 0);
 
 begin
+   dbg_state <= t_state'pos(state);
+
    -- optimized out if CCW=W
    bdoSIPO : entity work.SIPO
       generic map(
@@ -195,7 +199,7 @@ begin
 
    --===========================================================================================--
    --===================================== register updates ====================================--
-   --! State register is the only register that requires reset
+   --! `state` is the only register requiring reset
    -- synchronous reset with positive polarity (active high)
    GEN_SYNC_RST : if not ASYNC_RSTN generate
       process(clk)

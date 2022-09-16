@@ -126,6 +126,8 @@ architecture PreProcessor of PreProcessor is
 
    --! for simulation only
    signal received_wrong_header : boolean;
+   -- For simulators which do not dump VHDL enum signals
+   signal dbg_state             : natural;
 
    --========================================= Aliases =========================================--
    alias pdi_hdr           : std_logic_vector(W - 1 downto 0) is pdi_data(W_S - 1 downto W_S - W);
@@ -141,6 +143,9 @@ architecture PreProcessor of PreProcessor is
    alias seglen_counter_lo : unsigned(LOG2_W_DIV_8 - 1 downto 0) is seglen_counter(LOG2_W_DIV_8 - 1 downto 0);
 
 begin
+   -- Copy of `state` register as an intger
+   dbg_state <= t_state'pos(state);
+
    --======================================== Instances ========================================--
    keyPISO : entity work.PISO
       generic map(
@@ -365,8 +370,13 @@ begin
                   end if;
                end if;
 
-            when S_SDI_KEY | S_PDI_DATA =>
-               if sdi_fire or pdi_fire then
+            when S_SDI_KEY =>
+               if sdi_fire then
+                  seglen_counter_hi <= seglen_counter_hi - 1;
+               end if;
+
+            when S_PDI_DATA =>
+               if pdi_fire then
                   seglen_counter_hi <= seglen_counter_hi - 1;
                end if;
 

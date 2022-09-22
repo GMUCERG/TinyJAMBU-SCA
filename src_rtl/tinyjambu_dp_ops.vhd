@@ -116,7 +116,7 @@ begin
         bdo_swapped when others;
     --++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++modification
     -- Multiplexer to select which constant for FrameBits
-    gen_const_add : if CONST_ADD generate
+    GEN_CONST_ADD : if CONST_ADD generate
         with fbits_sel select fbits_mux_out <=
             b"001" when "00",
             b"011" when "01",
@@ -124,7 +124,8 @@ begin
             b"111" when others;
 
         partial_out <= s(95 downto 34) & (s(33 downto 32) xor partial_bytes) & s(31 downto 0);
-    else generate
+    end generate;
+    GEN_NOT_CONST_ADD : if not CONST_ADD generate
         fbits_mux_out <= (others => '0');
         partial_out   <= s(95 downto 34) & s(33 downto 32) & s(31 downto 0); --don't add partial_bytes
     end generate;

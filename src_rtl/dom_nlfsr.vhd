@@ -56,7 +56,7 @@ begin
         generic map(
             G_ORDER        => NUM_SHARES - 1,
             G_W            => SHARE_WIDTH,
-            G_PLUS         => HPC3_PLUS,
+            G_PLUS         => SCA_GADGET = HPC3_PLUS,
             G_PLUS_OUT_REG => false
         )
         port map(

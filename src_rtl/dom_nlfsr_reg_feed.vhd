@@ -63,9 +63,11 @@ begin
     and_y <= reg((85 + CONCURRENT) - 1 downto 85);
 
     ----feedback calculation===============================================================
-    feedback_gen0 : if CONST_ADD generate
+    GEN_CONST_ADD : if CONST_ADD generate
         feedback <= reg((91 + CONCURRENT) - 1 downto 91) xor (not and_out) xor reg((47 + CONCURRENT) - 1 downto 47) xor reg((0 + CONCURRENT) - 1 downto 0) xor key((to_int01(counter) + CONCURRENT) - 1 downto to_int01(counter));
-    else generate
+    end generate;
+
+    GEN_NOT_CONST_ADD : if not CONST_ADD generate
         feedback <= reg((91 + CONCURRENT) - 1 downto 91) xor (and_out) xor reg((47 + CONCURRENT) - 1 downto 47) xor reg((0 + CONCURRENT) - 1 downto 0) xor key((to_int01(counter) + CONCURRENT) - 1 downto to_int01(counter));
     end generate;
 

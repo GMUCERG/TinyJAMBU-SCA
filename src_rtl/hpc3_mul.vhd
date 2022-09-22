@@ -51,7 +51,8 @@ begin
                     z   => zi
                 );
 
-        else generate
+        end generate;
+        GEN_NOT_HPC3 : if not G_PLUS generate
             INST_HPC3 : entity work.hpc3_and
                 generic map(G_ORDER => G_ORDER)
                 port map(

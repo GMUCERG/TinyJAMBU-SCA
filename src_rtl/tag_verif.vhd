@@ -71,14 +71,15 @@ begin
    -- We always (combinationally) mix corresponding shares of BDI and tag (BDO) outputs
    -- Different shares are not mixed though, so should be perfectly safe.
 
-   process(all)
+   -- process(all)
+   process(mixed_reg, failed)
       variable tmp_mixed : std_logic_vector(CCW - 1 downto 0);
    begin
       tmp_mixed     := mixed_reg(CCW - 1 downto 0);
       for i in 1 to PDI_SHARES - 1 loop
          tmp_mixed := tmp_mixed xor mixed_reg((i + 1) * CCW - 1 downto i * CCW);
       end loop;
-      failed_so_far <= (or tmp_mixed) or failed;
+      failed_so_far <= lwc_or_reduce(tmp_mixed) or failed;
    end process;
 
    process(clk)
@@ -130,7 +131,8 @@ begin
       end if;
    end process;
 
-   process(all)
+   -- process(all)
+   process(state, bdi_ready, type_ok, cc_tag_valid, bdi_valid)
    begin
       rdi_ready      <= '0';
       bdi_ready      <= '0';

@@ -33,12 +33,15 @@ package design_pkg is
     --! Internal key width. If SW = 8 or 16, CCSW = SW. If SW=32, CCSW = 8, 16, or 32.
     --! Internal data width. If W = 8 or 16, CCW = W. If W=32, CCW = 8, 16, or 32.
     --! derived from the parameters above, assigned in the package body below.
+    
+    type SCA_GADGET_T is (HPC3, HPC3_PLUS, DOM);
 
-    constant CCW       : integer := 32;
-    constant CCSW      : integer := CCW;
-    constant HPC3_PLUS : boolean := true; -- use HPC3+ instead of HPC3
-    constant CCRW      : integer := SHARE_WIDTH * (NUM_SHARES - 1) * (NUM_SHARES + to_integer(HPC3_PLUS));
-    constant CCWdiv8   : integer := CCW / 8;
+    constant CCW        : integer := 32;
+    constant CCSW       : integer := CCW;
+    constant SCA_GADGET : SCA_GADGET_T := HPC3; 
+    -- FIXME!!! fix for DOM
+    constant CCRW       : integer      := SHARE_WIDTH * (NUM_SHARES - 1) * (NUM_SHARES + to_integer(SCA_GADGET = HPC3_PLUS));
+    constant CCWdiv8    : integer := CCW / 8;
 
     constant TAG_SIZE        : integer; --! Tag size
     constant HASH_VALUE_SIZE : integer; --! Hash value size
@@ -62,7 +65,7 @@ package design_pkg is
     --! chop a std_logic_vector into `n` equal-length pieces as a slv_array_t
     --! requires length of a to be a multiple of n
     --! Little Endian: least significant (LSB) portion of the input `a` is assigned to index 0 of the output
-    function chop_le(a : std_logic_vector; n : positive) return slv_array_t;
+    -- function chop_le(a : std_logic_vector; n : positive) return slv_array_t;
 
     --! concatenate slv_array_t elements into a single std_logic_vector
     -- Big Endian

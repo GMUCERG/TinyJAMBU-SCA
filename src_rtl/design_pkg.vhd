@@ -35,7 +35,7 @@ package design_pkg is
     --! derived from the parameters above, assigned in the package body below.
 
     type SCA_GADGET_T is (HPC3, HPC3_PLUS, DOM);
-    constant SCA_GADGET : SCA_GADGET_T := HPC3;
+    constant SCA_GADGET : SCA_GADGET_T := DOM;
 
     pure function gadget_rand_bits(GADGET : SCA_GADGET_T; G_ORDER : positive) return integer;
 
@@ -116,15 +116,15 @@ package body design_pkg is
     --! chop a std_logic_vector into `n` equal-length pieces as a slv_array_t
     --! requires length of a to be a multiple of n
     --! Little Endian: least significant (LSB) portion of the input `a` is assigned to index 0 of the output
-    function chop_le(a : std_logic_vector; n : positive) return slv_array_t is
-        constant el_w : positive := a'length / n;
-        variable ret  : slv_array_t(0 to n - 1);
-    begin
-        for i in ret'range loop
-            ret(i) := a((i + 1) * el_w - 1 downto i * el_w);
-        end loop;
-        return ret;
-    end function;
+    -- function chop_le(a : std_logic_vector; n : positive) return slv_array_t is
+    --     constant el_w : positive := a'length / n;
+    --     variable ret  : slv_array_t(0 to n - 1);
+    -- begin
+    --     for i in ret'range loop
+    --         ret(i) := a((i + 1) * el_w - 1 downto i * el_w);
+    --     end loop;
+    --     return ret;
+    -- end function;
 
     --! chop a std_logic_vector into `n` equal-length pieces as a slv_array_t
     --! requires length of a to be a multiple of n

@@ -176,7 +176,7 @@ begin
             cc_tag_ready   => cc_tag_ready,
             --
             --
-            rdi            => rdi(PDI_SHARES * CCW - 1 downto 0), -- TODO
+            rdi            => rdi,
             rdi_valid      => tv_rdi_valid,
             rdi_ready      => tv_rdi_ready,
             --

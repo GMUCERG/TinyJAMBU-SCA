@@ -35,7 +35,7 @@ entity tag_verif is
       cc_tag_ready   : out std_logic;
       --
       -- TODO: is rdi really necessary?
-      rdi            : in  std_logic_vector(PDI_SHARES * CCW - 1 downto 0);
+      rdi            : in  std_logic_vector(CCRW - 1 downto 0);
       rdi_valid      : in  std_logic;
       rdi_ready      : out std_logic;
       --

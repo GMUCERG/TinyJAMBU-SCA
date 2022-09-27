@@ -258,7 +258,13 @@ begin
     -- generate reset
     Reset_PROCESS : process
     begin
-        report LF & " -- Testvectors:  " & G_FNAME_PDI & " " & G_FNAME_SDI & " " & G_FNAME_DO & LF & " -- Clock Period:  " & integer'image(G_CLK_PERIOD_PS) & " ps" & LF & " -- Max Failures:  " & integer'image(G_MAX_FAILURES) & LF & " -- Timout Cycles: " & integer'image(G_TIMEOUT_CYCLES) & LF & " -- Test Mode:     " & integer'image(G_TEST_MODE) & LF & " -- Random Seed:   " & integer'image(G_RANDOM_SEED) & LF & " -- Test Mode:     " & integer'image(G_TEST_MODE) & LF & CR severity note;
+        report LF & " -- Testvectors:  " & G_FNAME_PDI & " " & G_FNAME_SDI & " " & G_FNAME_DO & LF &
+        " -- Clock Period:  " & integer'image(G_CLK_PERIOD_PS) & " ps" & LF &
+        " -- Max Failures:  " & integer'image(G_MAX_FAILURES) & LF & 
+        " -- Timout Cycles: " & integer'image(G_TIMEOUT_CYCLES) & LF &
+        " -- Test Mode:     " & integer'image(G_TEST_MODE) & LF &
+        " -- Random Seed:   " & integer'image(G_RANDOM_SEED) & LF &
+        CR severity note;
 
         seed(G_RANDOM_SEED);
         wait for G_PRERESET_WAIT_NS * ns;

@@ -14,7 +14,7 @@ from rich.table import Table
 from xeda import Design
 from xeda.dataclass import Extra, Field, XedaBaseModel as BaseModel
 from xeda.flow_runner import DefaultRunner as FlowRunner
-from xeda.flows import GhdlSim
+from xeda.flows import GhdlSim, VivadoSim
 import click
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
@@ -241,13 +241,20 @@ KATS_DIR = SCRIPT_DIR / "GMU_KAT"
     help="run flows in debug mode",
 )
 @click.option(
+    "--sim-flow",
+    type=str,
+    show_default=True,
+    default="ghdl_sim",
+    help="simulation flow to use",
+)
+@click.option(
     "--build",
     is_flag=True,
     show_default=True,
     default=False,
     help="force build reference libraries",
 )
-def cli(toml_path, debug, build=False):
+def cli(toml_path, debug, sim_flow, build=False):
     """toml_path: Path to design description TOML file."""
     design = LwcDesign.from_toml(toml_path)
     lwc = design.lwc
@@ -308,7 +315,7 @@ def cli(toml_path, debug, build=False):
     if debug:
         settings["wave"] = "benchmark.ghw"
         # settings["debug"] = True
-    f = FlowRunner().run_flow(GhdlSim, design, settings)
+    f = FlowRunner().run_flow(sim_flow, design, settings)
     if not f.succeeded:
         raise Exception("Ghdl flow failed")
 

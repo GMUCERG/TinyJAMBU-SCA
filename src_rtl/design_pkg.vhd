@@ -52,11 +52,13 @@ package design_pkg is
     type term_array is array (0 to NUM_SHARES - 1, 0 to NUM_SHARES - 1) of std_logic_vector(SHARE_WIDTH - 1 downto 0);
     type data_array is array (0 to NUM_SHARES - 1) of std_logic_vector(WIDTH - 1 downto 0);
 
-    type bit_array_t is array (natural range <>) of std_logic;
-    type slv_array_t is array (natural range <>) of std_logic_vector;
+    -- type slv_array_t is array (natural range <>) of std_logic_vector;
+    type slv_array_t is array (natural range <>) of std_logic_vector(CCW - 1 downto 0);
 
-    subtype T_BDIO_ARRAY is slv_array_t(0 to NUM_SHARES - 1)(CCW - 1 downto 0);
-    subtype T_KEY_ARRAY is slv_array_t(0 to NUM_SHARES - 1)(CCSW - 1 downto 0);
+    -- subtype T_BDIO_ARRAY is slv_array_t(0 to NUM_SHARES - 1)(CCW - 1 downto 0);
+    -- subtype T_KEY_ARRAY is slv_array_t(0 to NUM_SHARES - 1)(CCSW - 1 downto 0);
+    subtype T_BDIO_ARRAY is slv_array_t(0 to NUM_SHARES - 1);
+    subtype T_KEY_ARRAY is slv_array_t(0 to NUM_SHARES - 1);
 
     --! chop a std_logic_vector into `n` equal-length pieces as a slv_array_t
     --! requires length of a to be a multiple of n
@@ -116,7 +118,7 @@ package body design_pkg is
     --! Little Endian: least significant (LSB) portion of the input `a` is assigned to index 0 of the output
     function chop_le(a : std_logic_vector; n : positive) return slv_array_t is
         constant el_w : positive := a'length / n;
-        variable ret  : slv_array_t(0 to n - 1)(el_w - 1 downto 0);
+        variable ret  : slv_array_t(0 to n - 1);
     begin
         for i in ret'range loop
             ret(i) := a((i + 1) * el_w - 1 downto i * el_w);
@@ -129,7 +131,7 @@ package body design_pkg is
     --! Big Endian: Most significant (MSB) portion of the input `a` is assigned to index 0 of the output
     function chop_be(a : std_logic_vector; n : positive) return slv_array_t is
         constant el_w : positive := a'length / n;
-        variable ret  : slv_array_t(0 to n - 1)(el_w - 1 downto 0);
+        variable ret  : slv_array_t(0 to n - 1);
     begin
         for i in ret'range loop
             ret(n - 1 - i) := a((i + 1) * el_w - 1 downto i * el_w);

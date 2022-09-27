@@ -53,7 +53,7 @@ architecture RTL of tag_verif is
    -- registers
    signal state                 : T_STATE;
    signal shared_reg, mixed_reg : std_logic_vector(PDI_SHARES * CCW - 1 downto 0);
-   signal failed                : std_logic;
+   signal failed, bdi_ready_o   : std_logic;
    signal valids                : std_logic_vector(1 downto 0);
 
    -- wires
@@ -67,6 +67,7 @@ begin
    -- not really needed
    type_ok <= '1' when bdi_type = HDR_TAG else '0';
    msg_auth <= not failed;
+   bdi_ready <= bdi_ready_o;
 
    -- We always (combinationally) mix corresponding shares of BDI and tag (BDO) outputs
    -- Different shares are not mixed though, so should be perfectly safe.
@@ -105,7 +106,7 @@ begin
 
                when S_INPUT =>
                   -- wait for both bdi and cc_tag valid
-                  if bdi_valid = '1' and bdi_ready = '1' then
+                  if bdi_valid = '1' and bdi_ready_o = '1' then
                      valids     <= valids(valids'length - 2 downto 0) & '1';
                      --  not mixing shares
                      shared_reg <= bdi xor cc_tag;
@@ -132,10 +133,10 @@ begin
    end process;
 
    -- process(all)
-   process(state, bdi_ready, type_ok, cc_tag_valid, bdi_valid)
+   process(state, bdi_ready_o, type_ok, cc_tag_valid, bdi_valid)
    begin
       rdi_ready      <= '0';
-      bdi_ready      <= '0';
+      bdi_ready_o    <= '0';
       cc_tag_ready   <= '0';
       msg_auth_valid <= '0';
       pipeline_go    <= '0';
@@ -146,9 +147,9 @@ begin
 
          when S_INPUT =>
             -- wait until both bdi and cc_tag are valid
-            bdi_ready    <= cc_tag_valid and type_ok;
+            bdi_ready_o  <= cc_tag_valid and type_ok;
             cc_tag_ready <= bdi_valid and type_ok;
-            pipeline_go  <= bdi_valid and bdi_ready;
+            pipeline_go  <= bdi_valid and bdi_ready_o;
 
          when S_FIN =>
             pipeline_go <= '1';

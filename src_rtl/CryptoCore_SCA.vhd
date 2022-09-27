@@ -74,15 +74,22 @@ architecture structural of CryptoCore_SCA is
     signal bdo_sel, nlfsr_load, nlfsr_en, nlfsr_reset, ctrl_decrypt : std_logic;
     signal key_load, partial                                        : std_logic;
     signal fbits_sel, s_sel, key_index, partial_bytes               : std_logic_vector(1 downto 0);
+
+    signal bdo_o : std_logic_vector(PDI_SHARES * CCW - 1 downto 0);
+    
     -- tag verification
-    signal cc_tag_last, cc_tag_valid, cc_tag_ready                  : std_logic;
-    signal tv_rdi_valid, tv_rdi_ready                               : std_logic;
+    signal cc_tag_last, cc_tag_valid, cc_tag_ready, tv_done            : std_logic;
+    signal tv_rdi_valid, tv_rdi_ready, msg_auth_valid_o , tv_bdi_valid : std_logic;
     signal cycle_odd : std_logic;
 
 begin
-    bdi_array <= chop_be(bdi, PDI_SHARES);
-    key_array <= chop_be(key, SDI_SHARES);
-    bdo       <= concat_be(bdo_array);
+    bdi_array      <= chop_be(bdi, PDI_SHARES);
+    key_array      <= chop_be(key, SDI_SHARES);
+    bdo_o          <= concat_be(bdo_array);
+    bdo            <= bdo_o;
+    msg_auth_valid <= msg_auth_valid_o;
+    tv_done        <= msg_auth_valid_o and msg_auth_ready;
+    tv_bdi_valid   <= cc_tag_valid and bdi_valid;
 
     datapath : entity work.tinyjambu_datapath
         port map(
@@ -149,7 +156,7 @@ begin
             cc_tag_ready    => cc_tag_ready,
             tv_rdi_valid    => tv_rdi_valid,
             tv_rdi_ready    => tv_rdi_ready,
-            tv_done         => msg_auth_valid and msg_auth_ready -- in
+            tv_done         => tv_done
         );
 
     INST_TAG_VERIF : entity work.tag_verif
@@ -160,20 +167,20 @@ begin
             bdi            => bdi,
             bdi_type       => bdi_type,
             bdi_last       => bdi_eot,
-            bdi_valid      => cc_tag_valid and bdi_valid,
+            bdi_valid      => tv_bdi_valid,
             bdi_ready      => open,     -- don't need it
             -- CryptoCore
-            cc_tag         => bdo,
+            cc_tag         => bdo_o,
             cc_tag_last    => cc_tag_last,
             cc_tag_valid   => cc_tag_valid,
             cc_tag_ready   => cc_tag_ready,
             --
             --
-            rdi            => rdi(PDI_SHARES * CCW - 1 downto 0), -- TODO
+            rdi            => rdi,
             rdi_valid      => tv_rdi_valid,
             rdi_ready      => tv_rdi_ready,
             --
-            msg_auth_valid => msg_auth_valid,
+            msg_auth_valid => msg_auth_valid_o,
             msg_auth_ready => msg_auth_ready,
             msg_auth       => msg_auth
         );

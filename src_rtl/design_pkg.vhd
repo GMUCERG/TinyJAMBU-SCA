@@ -23,25 +23,26 @@ use work.hpc3_utils_pkg.all;
 
 package design_pkg is
 
-    --!
     constant CONCURRENT  : positive := 32; --! Valid settings:  2, 4, 8, 16, 32
     constant SHARE_WIDTH : positive := CONCURRENT;
     constant WIDTH       : positive := 128; --state size
-    constant NUM_SHARES  : positive := 2; -- number of shares
+    constant SCA_ORDER   : natural  := 1;
+    constant NUM_SHARES  : positive := SCA_ORDER + 1; -- number of shares
 
     --! design parameters needed by the PreProcessor, PostProcessor, and LWC; assigned in the package body below!
     --! Internal key width. If SW = 8 or 16, CCSW = SW. If SW=32, CCSW = 8, 16, or 32.
     --! Internal data width. If W = 8 or 16, CCW = W. If W=32, CCW = 8, 16, or 32.
     --! derived from the parameters above, assigned in the package body below.
-    
-    type SCA_GADGET_T is (HPC3, HPC3_PLUS, DOM);
 
-    constant CCW        : integer := 32;
-    constant CCSW       : integer := CCW;
-    constant SCA_GADGET : SCA_GADGET_T := HPC3; 
-    -- FIXME!!! fix for DOM
-    constant CCRW       : integer      := SHARE_WIDTH * (NUM_SHARES - 1) * (NUM_SHARES + to_integer(SCA_GADGET = HPC3_PLUS));
-    constant CCWdiv8    : integer := CCW / 8;
+    type SCA_GADGET_T is (HPC3, HPC3_PLUS, DOM);
+    constant SCA_GADGET : SCA_GADGET_T := DOM;
+
+    pure function gadget_rand_bits(GADGET : SCA_GADGET_T; G_ORDER : positive) return integer;
+
+    constant CCW     : integer := 32;
+    constant CCSW    : integer := CCW;
+    constant CCRW    : integer := SHARE_WIDTH * gadget_rand_bits(SCA_GADGET, SCA_ORDER);
+    constant CCWdiv8 : integer := CCW / 8;
 
     constant TAG_SIZE        : integer; --! Tag size
     constant HASH_VALUE_SIZE : integer; --! Hash value size
@@ -51,11 +52,13 @@ package design_pkg is
     type term_array is array (0 to NUM_SHARES - 1, 0 to NUM_SHARES - 1) of std_logic_vector(SHARE_WIDTH - 1 downto 0);
     type data_array is array (0 to NUM_SHARES - 1) of std_logic_vector(WIDTH - 1 downto 0);
 
-    type bit_array_t is array (natural range <>) of std_logic;
-    type slv_array_t is array (natural range <>) of std_logic_vector;
+    -- type slv_array_t is array (natural range <>) of std_logic_vector;
+    type slv_array_t is array (natural range <>) of std_logic_vector(CCW - 1 downto 0);
 
-    subtype T_BDIO_ARRAY is slv_array_t(0 to NUM_SHARES - 1)(CCW - 1 downto 0);
-    subtype T_KEY_ARRAY is slv_array_t(0 to NUM_SHARES - 1)(CCSW - 1 downto 0);
+    -- subtype T_BDIO_ARRAY is slv_array_t(0 to NUM_SHARES - 1)(CCW - 1 downto 0);
+    -- subtype T_KEY_ARRAY is slv_array_t(0 to NUM_SHARES - 1)(CCSW - 1 downto 0);
+    subtype T_BDIO_ARRAY is slv_array_t(0 to NUM_SHARES - 1);
+    subtype T_KEY_ARRAY is slv_array_t(0 to NUM_SHARES - 1);
 
     --! chop a std_logic_vector into `n` equal-length pieces as a slv_array_t
     --! requires length of a to be a multiple of n
@@ -113,22 +116,22 @@ package body design_pkg is
     --! chop a std_logic_vector into `n` equal-length pieces as a slv_array_t
     --! requires length of a to be a multiple of n
     --! Little Endian: least significant (LSB) portion of the input `a` is assigned to index 0 of the output
-    function chop_le(a : std_logic_vector; n : positive) return slv_array_t is
-        constant el_w : positive := a'length / n;
-        variable ret  : slv_array_t(0 to n - 1)(el_w - 1 downto 0);
-    begin
-        for i in ret'range loop
-            ret(i) := a((i + 1) * el_w - 1 downto i * el_w);
-        end loop;
-        return ret;
-    end function;
+    -- function chop_le(a : std_logic_vector; n : positive) return slv_array_t is
+    --     constant el_w : positive := a'length / n;
+    --     variable ret  : slv_array_t(0 to n - 1);
+    -- begin
+    --     for i in ret'range loop
+    --         ret(i) := a((i + 1) * el_w - 1 downto i * el_w);
+    --     end loop;
+    --     return ret;
+    -- end function;
 
     --! chop a std_logic_vector into `n` equal-length pieces as a slv_array_t
     --! requires length of a to be a multiple of n
     --! Big Endian: Most significant (MSB) portion of the input `a` is assigned to index 0 of the output
     function chop_be(a : std_logic_vector; n : positive) return slv_array_t is
         constant el_w : positive := a'length / n;
-        variable ret  : slv_array_t(0 to n - 1)(el_w - 1 downto 0);
+        variable ret  : slv_array_t(0 to n - 1);
     begin
         for i in ret'range loop
             ret(n - 1 - i) := a((i + 1) * el_w - 1 downto i * el_w);
@@ -172,6 +175,19 @@ package body design_pkg is
             ret := ret xor a(i);
         end loop;
         return ret;
+    end function;
+
+    pure function gadget_rand_bits(GADGET : SCA_GADGET_T; G_ORDER : positive) return integer is
+    begin
+        case (GADGET) is
+            when DOM =>
+                return G_ORDER * (G_ORDER + 1) / 2;
+            when HPC3 =>
+                return G_ORDER * (G_ORDER + 1);
+            when HPC3_PLUS =>
+                return G_ORDER * (G_ORDER + 2);
+        end case;
+        return 0;
     end function;
 
 end package body design_pkg;

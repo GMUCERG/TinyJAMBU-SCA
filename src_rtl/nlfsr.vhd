@@ -21,7 +21,7 @@ use ieee.std_logic_1164.ALL;
 use ieee.numeric_std.all;
 use work.design_pkg.all;
 
-entity dom_nlfsr is
+entity nlfsr is
     port(
         clk       : in  std_logic;
         reset     : in  std_logic;
@@ -35,41 +35,58 @@ entity dom_nlfsr is
     );
 
     attribute DONT_TOUCH : string;
-    attribute DONT_TOUCH of dom_nlfsr : entity is "true";
-end entity dom_nlfsr;
+    attribute DONT_TOUCH of nlfsr : entity is "true";
+end entity nlfsr;
 
-architecture behav of dom_nlfsr is
-    -- attribute DONT_TOUCH of behav : architecture is "true";
+architecture behav of nlfsr is
     --============================================
     signal and_x   : share_array;
     signal and_y   : share_array;
     signal and_out : share_array;
+    signal mul_en  : std_logic;
     --============================================
+
+    attribute DONT_TOUCH of behav : architecture is "true";
 
     attribute DONT_TOUCH of and_x : signal is "true";
     attribute DONT_TOUCH of and_y : signal is "true";
     attribute DONT_TOUCH of and_out : signal is "true";
 
 begin
+    mul_en <= enable and not cycle_odd;
 
-    hpc3_and : entity work.hpc3_mul
-        generic map(
-            G_ORDER        => NUM_SHARES - 1,
-            G_W            => SHARE_WIDTH,
-            G_PLUS         => SCA_GADGET = HPC3_PLUS,
-            G_PLUS_OUT_REG => false
-        )
+    GEN_DOM: if SCA_GADGET = DOM generate
+        INST_DOM_MUL : entity work.dom_mul
         port map(
             clk => clk,
-            en  => (enable and not cycle_odd),
+            en  => mul_en,
             x   => and_x,
             y   => and_y,
-            r   => rnd,
-            z   => and_out
+            z   => rnd,
+            q   => and_out
         );
+    end generate;
+        
+    GEN_HPC3: if SCA_GADGET = HPC3 or SCA_GADGET = HPC3_PLUS generate
+        INST_HPC3_MUL : entity work.hpc3_mul
+            generic map(
+                G_ORDER        => NUM_SHARES - 1,
+                G_W            => SHARE_WIDTH,
+                G_PLUS         => SCA_GADGET = HPC3_PLUS,
+                G_PLUS_OUT_REG => false
+            )
+            port map(
+                clk => clk,
+                en  => mul_en,
+                x   => and_x,
+                y   => and_y,
+                r   => rnd,
+                z   => and_out
+            );
+    end generate;
 
     reg_feed_gen : for i in 0 to NUM_SHARES - 1 generate
-        reg_feed_i : entity work.dom_nlfsr_reg_feed
+        reg_feed_i : entity work.nlfsr_reg_feed
             generic map(
                 CONST_ADD => i = 0
             )

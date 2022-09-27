@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
---! @file       dom_nlfsr_reg_feed.vhd
+--! @file       nlfsr_reg_feed.vhd
 --! @brief      Implementation of a non-linear shift register used for TinyJAMBU
 --!             Protected using DOM
 --! @author     Sammy Lin
@@ -23,7 +23,7 @@ use ieee.numeric_std.all;
 use work.NIST_LWAPI_pkg.all;
 use work.design_pkg.all;
 
-entity dom_nlfsr_reg_feed is
+entity nlfsr_reg_feed is
     generic(
         CONST_ADD : boolean
     );
@@ -41,10 +41,10 @@ entity dom_nlfsr_reg_feed is
     );
 
     attribute DONT_TOUCH : string;
-    attribute DONT_TOUCH of dom_nlfsr_reg_feed : entity is "true";
-end entity dom_nlfsr_reg_feed;
+    attribute DONT_TOUCH of nlfsr_reg_feed : entity is "true";
+end entity nlfsr_reg_feed;
 
-architecture behav of dom_nlfsr_reg_feed is
+architecture behav of nlfsr_reg_feed is
     attribute DONT_TOUCH of behav : architecture is "true";
 
     signal reg      : std_logic_vector(WIDTH - 1 downto 0);

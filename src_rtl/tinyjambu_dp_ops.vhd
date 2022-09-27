@@ -73,7 +73,7 @@ architecture behav of tinyjambu_dp_ops is
 
     --signal for the NLFSR
     signal s         : std_logic_vector(REG_SIZE - 1 downto 0);
-    signal key_array : slv_array_t(0 to 3)(31 downto 0);
+    signal key_array : slv_array_t(0 to 3);
 
     --ADDED
 begin

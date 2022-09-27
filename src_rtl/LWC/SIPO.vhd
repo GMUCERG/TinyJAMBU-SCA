@@ -253,12 +253,12 @@ begin
                     pout_array(ch)(i) <= and_mask(valids(i), data(ch)(i)) or --
                                          and_mask(marker(i), sin_data_arr(ch));
                 end generate;
-                GEN_CLEAR_INVALIDS : if G_CLEAR_INVALID_BYTES generate
+                GEN_SUBWORD_CLEAR_INVALIDS : if G_CLEAR_INVALID_BYTES generate
                     pout_array(ch)(BUFF_WORDS) <= and_mask(marker(BUFF_WORDS), sin_data_arr(ch));
-                end generate GEN_CLEAR_INVALIDS;
-                GEN_NOT_CLEAR_INVALIDS : if not G_CLEAR_INVALID_BYTES generate -- else generate
+                end generate;
+                GEN_SUBWORD_NOT_CLEAR_INVALIDS : if not G_CLEAR_INVALID_BYTES generate -- else generate
                     pout_array(ch)(BUFF_WORDS) <= sin_data_arr(ch);
-                end generate GEN_NOT_CLEAR_INVALIDS;
+                end generate;
             end generate;
 
             GEN_POUT_KEEP : for i in 0 to BUFF_WORDS generate

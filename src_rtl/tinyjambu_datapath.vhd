@@ -86,11 +86,10 @@ begin
             );
     end generate;
 
-    state : entity work.dom_nlfsr
+    INST_NLFSR : entity work.nlfsr
         port map(
             clk    => clk,
             reset  => nlfsr_reset,
---            enable => (nlfsr_en and not cycle_odd),
             enable => nlfsr_en,
             key    => nlfsr_key,
             load   => nlfsr_load,

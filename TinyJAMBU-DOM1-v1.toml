@@ -28,26 +28,16 @@ sources = [
     "src_rtl/LWC/FIFO.vhd",
     "src_rtl/LWC/PreProcessor.vhd",
     "src_rtl/LWC/PostProcessor.vhd",
-    ## SCA protected version of LWC top
     "src_rtl/LWC/LWC_SCA.vhd",
-    # "src_rtl/LWC/LFSR.vhd",
-    # "src_rtl/LWC/LWC_SCA_wrapper.vhd",
+    "src_rtl/LWC/LFSR.vhd",
+    "src_rtl/LWC/LWC_SCA_wrapper.vhd",
 ]
-# includes = []
-top = "LWC_SCA"
-# top = "LWC_SCA_wrapper"
+# top = "LWC_SCA"
+top = "LWC_SCA_wrapper"
 clock.port = "clk"
-# clock.port = "clk"
-# reset.port = "reset"
-# reset.active_high = true
-# reset.asynchronous = false
-# parameters = { G_GENERIC1 = 123 }
 
 [language]
 vhdl.version = "2008"
-# vhdl.synopsys = false
-# verilog.version = "2001"
-# systemverilog.version = "2009"
 
 [tb]
 sources = [

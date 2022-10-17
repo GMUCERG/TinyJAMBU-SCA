@@ -95,8 +95,8 @@ architecture behavioral of tinyjambu_control is
                         -- Generate the 64 bit tag
                         TAG_A, TAG_B, TAG_C, TAG_D, TAG_E, TAG_F, SEND_AUTH);
 
-    signal state      : state_type := IDLE;
-    signal next_state : state_type := IDLE;
+    signal state      : state_type;
+    signal next_state : state_type;
 
     signal key_count      : unsigned(2 downto 0);
     signal next_key_count : unsigned(2 downto 0);
@@ -111,11 +111,15 @@ architecture behavioral of tinyjambu_control is
     
     signal rdi_ready_s : std_logic;
 
+    signal state_int : integer;
+
 begin
+
+    state_int <= state_type'pos(state); -- GHDL does not dump enum types
 
     key_index <= std_logic_vector(key_count(1 downto 0));
     cycle_odd <= cycles(0);
-    rdi_ready        <= rdi_ready_s and cycle_odd;
+    rdi_ready <= rdi_ready_s and cycles(0);
     
     process(clk)
     begin
@@ -132,7 +136,11 @@ begin
         end if;
     end process;
 
-    process(all)
+    -- process(all)
+    process(
+        npub, key_count, cycles, state, wrd_cnt,
+        cc_tag_ready, decrypt_in, key_valid, bdi_eot, tv_done, bdi_valid_bytes, bdo_ready, bdi_type, bdi_eoi, bdi_valid, bdi_size, key_update, rdi_valid
+    )
     begin
         -- Default values
         nlfsr_en        <= '0';
@@ -168,7 +176,6 @@ begin
 
             --! =========================================================== 
             when IDLE =>
-                --bdi_ready       <= '1';
                 s_sel            <= b"11";
                 nlfsr_reset      <= '1';
                 if (key_valid = '1' and key_update = '1') then
@@ -343,7 +350,7 @@ begin
                     --
                     bdi_ready <= cc_tag_ready;
                     cc_tag_valid <= '1';
-                    if bdi_valid = '1' and bdi_ready = '1' then
+                    if bdi_valid = '1' and cc_tag_ready = '1' then
                         next_state <= TAG_D;
                     end if;
                 else
@@ -380,7 +387,7 @@ begin
                     bdi_ready <= cc_tag_ready;
                     cc_tag_valid <= '1';
                     cc_tag_last <= '1';
-                    if bdi_valid = '1' and bdi_ready = '1' then
+                    if bdi_valid = '1' and cc_tag_ready = '1' then
                         next_state <= SEND_AUTH;
                     end if;
                 else

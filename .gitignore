@@ -1,0 +1,7 @@
+**/__pycache__
+**/xeda_run
+.vscode
+**/*.vcd
+**/*.ghw
+**/*.gtkw
+*.log

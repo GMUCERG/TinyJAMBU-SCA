@@ -28,7 +28,7 @@
 --! Description
 --! bdo_type is not used at the moment.
 --!
---! VHDL standard compatibility: 1993, 2002, 2008
+--! VHDL standard compatibility: VHDL 1993, 2002, 2008, and later
 --!
 --===============================================================================================--
 
@@ -91,7 +91,6 @@ architecture RTL of PostProcessor is
    signal nx_state                               : t_state;
    -- PRE VHDL-2008 COMPATIBILITY: readable temporaries assigned to output ports
    signal cmd_ready_o, do_valid_o                : std_logic;
-   signal bdo_cleared                            : std_logic_vector(PDI_SHARES * CCW - 1 downto 0);
    signal bdo_valid_p, bdo_ready_p, bdo_last_p   : std_logic;
    signal bdo_data_p                             : std_logic_vector(PDI_SHARES * W - 1 downto 0);
    signal seglen                                 : std_logic_vector(SEGLEN_BITS - 1 downto 0);
@@ -105,6 +104,8 @@ architecture RTL of PostProcessor is
    signal reset_hdr_counter, hdr_first, hdr_last : boolean;
    signal sending_hdr                            : boolean;
    signal last_flit_of_segment                   : boolean;
+   -- DEBUG (For VHDL simulators which do not dump enum typed signals)
+   signal dbg_state                              : natural;
 
    --========================================= Aliases =========================================--
    alias cmd_hdr_opcode    : std_logic_vector(3 downto 0) is cmd_data(W - 1 downto W - 4);
@@ -120,20 +121,35 @@ architecture RTL of PostProcessor is
    alias seglen_counter_lo : unsigned(LOG2_W_DIV_8 - 1 downto 0) is seglen_counter(LOG2_W_DIV_8 - 1 downto 0);
 
 begin
+   dbg_state <= t_state'pos(state);
+
    -- optimized out if CCW=W
-   bdoSIPO : entity work.DATA_SIPO
+   bdoSIPO : entity work.SIPO
+      generic map(
+         G_IN_W                => CCW,
+         G_N                   => W / CCW,
+         G_CHANNELS            => PDI_SHARES,
+         G_ASYNC_RSTN          => ASYNC_RSTN,
+         G_BIGENDIAN           => TRUE,
+         G_PIPELINED           => FALSE, -- TODO
+         G_SUBWORD             => TRUE,
+         G_CLEAR_INVALID_BYTES => TRUE
+      )
       port map(
-         clk          => clk,
-         rst          => rst,
+         clk        => clk,
+         rst        => rst,
          -- serial input (CCW)
-         data_s       => bdo_cleared,
-         end_of_input => bdo_last,
-         data_valid_s => bdo_valid,
-         data_ready_s => bdo_ready,
+         sin_data   => bdo_data,
+         sin_keep   => bdo_valid_bytes,
+         sin_last   => bdo_last,
+         sin_valid  => bdo_valid,
+         sin_ready  => bdo_ready,
          -- parallel output (W)
-         data_p       => bdo_data_p,
-         data_valid_p => bdo_valid_p,
-         data_ready_p => bdo_ready_p
+         pout_data  => bdo_data_p,
+         pout_keep  => open,
+         pout_last  => bdo_last_p,
+         pout_valid => bdo_valid_p,
+         pout_ready => bdo_ready_p
       );
 
    --===========================================================================================--
@@ -178,12 +194,12 @@ begin
       seglen <= seglen_msb8 & hdr_seglen;
    end generate;
    WNOT8_GEN : if W /= 8 generate
-      seglen <= cmd_hdr_seglen;
+      seglen <= cmd_hdr_seglen(seglen'range);
    end generate;
 
    --===========================================================================================--
    --===================================== register updates ====================================--
-   --! State register is the only register that requires reset
+   --! `state` is the only register requiring reset
    -- synchronous reset with positive polarity (active high)
    GEN_SYNC_RST : if not ASYNC_RSTN generate
       process(clk)
@@ -244,7 +260,6 @@ begin
    cmd_fire             <= cmd_valid = '1' and cmd_ready_o = '1';
    bdo_p_fire           <= bdo_valid_p = '1' and bdo_ready_p = '1';
    -- set non-valid bytes to zero
-   bdo_cleared          <= clear_invalid_bytes(bdo_data, bdo_valid_bytes);
    -- TODO avoid recomparison to zero by including a seglen_is_zero in cmd from PreProcessor
    -- NOTE: The following optimization needs to be changed if other operations are added
    -- possibilities: INST_HASH ("1000"), INST_DEC  ("0011"), or INST_DEC ("0010")
@@ -257,17 +272,12 @@ begin
    last_flit_of_segment <= is_zero(seglen_counter_hi(seglen_counter_hi'length - 1 downto 1)) and --
                            (seglen_counter_hi(0) = '0' or is_zero(seglen_counter_lo));
 
-   -- needs no delay as our last serial_in element is also the last parallel_out element ???
-   -- TODO not true for a generic PISO as the input could be stored and out_fire happens after in_fire
-   -- works for current DATA_SIPO implementation as it directly passes the last input fragment
-   bdo_last_p <= bdo_last;
-
    --===========================================================================================--
    --= When using VHDL 2008+ change to
    -- process(all)
    process(state, op_is_hash, op_is_decrypt, do_ready, do_fire, decrypt_flag, seglen_is_zero, --
       eot_flag, cmd_valid, cmd_fire, hdr_first, hdr_last, auth_valid, status_success, --
-      cmd_hdr_opcode, bdo_valid_p, bdo_data_p, bdo_p_fire, bdo_last_p, seglen, last_flit_of_segment)
+      cmd_hdr_opcode, bdo_valid_p, bdo_data_p, bdo_p_fire, bdo_last_p, last_flit_of_segment)
    begin
       -- make sure we do not output intermediate data
       do_data           <= (others => '0');

@@ -17,8 +17,8 @@ sources = [
     "src_rtl/dom_mul.vhd",
     "src_rtl/dom_mul_dep.vhd",
     "src_rtl/hpc3_mul.vhd",
-    "src_rtl/nlfsr_reg_feed.vhd",
-    "src_rtl/nlfsr.vhd",
+    "src_rtl/dom_nlfsr_reg_feed.vhd",
+    "src_rtl/dom_nlfsr.vhd",
     "src_rtl/tinyjambu_datapath.vhd",
     "src_rtl/tinyjambu_control.vhd",
     "src_rtl/tag_verif.vhd",
@@ -28,24 +28,34 @@ sources = [
     "src_rtl/LWC/FIFO.vhd",
     "src_rtl/LWC/PreProcessor.vhd",
     "src_rtl/LWC/PostProcessor.vhd",
+    ## SCA protected version of LWC top
     "src_rtl/LWC/LWC_SCA.vhd",
     "src_rtl/LWC/LFSR.vhd",
     "src_rtl/LWC/LWC_SCA_wrapper.vhd",
 ]
+# includes = []
 # top = "LWC_SCA"
 top = "LWC_SCA_wrapper"
 clock.port = "clk"
+# clock.port = "clk"
+# reset.port = "reset"
+# reset.active_high = true
+# reset.asynchronous = false
+# parameters = { G_GENERIC1 = 123 }
 
 [language]
 vhdl.version = "2008"
+# vhdl.synopsys = false
+# verilog.version = "2001"
+# systemverilog.version = "2009"
 
 [tb]
 sources = [
     "src_tb/LWC_TB_SCA.vhd",
-    # "src_tb/LWC_TB_SCA_wrapper_conf.vhd",
+    "src_tb/LWC_TB_SCA_wrapper_conf.vhd",
 ]
-top = "LWC_TB"
-# top = "LWC_TB_SCA_wrapper_conf"
+# top = "LWC_TB"
+top = "LWC_TB_SCA_wrapper_conf"
 # includes = []
 
 [tb.parameters]

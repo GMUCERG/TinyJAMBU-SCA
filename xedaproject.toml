@@ -1,0 +1,3 @@
+[flows.vivado_synth]
+fpga.part = "xc7a15tcsg324-3"
+clocks.main_clock.freq = 100
